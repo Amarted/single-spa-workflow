@@ -1,6 +1,6 @@
 import { addErrorHandler, getAppStatus, LOAD_ERROR, registerApplication, start } from 'single-spa';
 import { workflowStore } from '@shared/workflow/store/WorkflowStore';
-import { MessageService } from '@shared/MessageService';
+import { messageService } from '@shared/MessageService';
 import './styles/root-style.scss';
 
 /**
@@ -39,7 +39,7 @@ frontends.forEach((frontend) => {
 // Оповестить пользователя и сделать лог об ошибке загрузки приложения
 addErrorHandler((error) => {
   if (getAppStatus(error.appOrParcelName) === LOAD_ERROR) {
-    MessageService.showToast(`Не удалось загрузить приложение ${error.appOrParcelName}`, 'error');
+    messageService.showToast(`Не удалось загрузить приложение ${error.appOrParcelName}`, 'error');
     console.error(error);
   }
 });
@@ -52,9 +52,9 @@ start();
 async function initState(): Promise<void> {
   try {
     // Загрузим состояние шагов рабочего процесса с сервера
-    await workflowStore.loadFromApi();
+    await workflowStore.loadFromServer();
   } catch (error) {
-    MessageService.showToast('Не удалось загрузить данные с сервера. Возможно он не доступен', 'error');
+    messageService.showToast('Не удалось загрузить данные с сервера. Возможно он не доступен', 'error');
     console.error(error);
   }
 }

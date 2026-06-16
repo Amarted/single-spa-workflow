@@ -1,13 +1,25 @@
 export type MessageType = 'success' | 'error' | 'warning' | 'info';
 
-export class MessageService {
+/**
+ * Модальное окно с кнопками подтверждения и отмены, для внутреннего использования
+ */
+interface ModalWindow {
+  /** Overlay (задний фон) модального окна */
+  overlay: HTMLElement;
+  /** Кнопка подтверждения */
+  confirmButton: HTMLButtonElement;
+  /** Кнопка отмены */
+  cancelButton: HTMLButtonElement;
+}
+
+class MessageService {
   /**
    * Показать тост с сообщением.
    * @param message Текст сообщения
    * @param type Тип сообщения
    * @param duration Продолжительность показа в мс
    */
-  public static showToast(message: string, type: MessageType = 'info', duration = 3000): void {
+  public showToast(message: string, type: MessageType = 'info', duration = 3000): void {
     const toastElement = this.createNotificationToast(message, type);
     this.mountNotificationToast(toastElement, duration);
   }
@@ -18,12 +30,12 @@ export class MessageService {
    * @param message Текст сообщения
    * @returns Promise<boolean> - результат подтверждения пользователем (true - подтвердил, false - отменил)
    */
-  public static async showConfirm(title: string, message: string): Promise<boolean> {
+  public async showConfirm(title: string, message: string): Promise<boolean> {
     return new Promise((resolve) => {
       const modal = this.createModalDialog(title, message);
 
       this.bindModalDialogListeners(
-        modal.overlay,
+        modal,
         () => { this.cleanupAndResolve(modal.overlay, resolve, true); },
         () => { this.cleanupAndResolve(modal.overlay, resolve, false); }
       );
@@ -44,7 +56,12 @@ export class MessageService {
     });
   }
 
-  private static createNotificationToast(message: string, type: MessageType): HTMLElement {
+  /**
+   * Создать уведомление с сообщением (toast).
+   * @param message Текст сообщения
+   * @param type Тип сообщения
+   */
+  private createNotificationToast(message: string, type: MessageType): HTMLElement {
     const toast = document.createElement('div');
     toast.className = `notification-toast type-${type}`;
 
@@ -61,11 +78,13 @@ export class MessageService {
     return toast;
   }
 
-  private static createModalDialog(title: string, message: string): {
-    overlay: HTMLElement;
-    confirmButton: HTMLButtonElement;
-    cancelButton: HTMLButtonElement;
-  } {
+  /**
+   * Создать модальное окно (его структуру) для подтверждения действия пользователем.
+   * @param title Заголовок окна
+   * @param message Текст сообщения 
+   * @returns Объект с элементами модального ока (фон, кнопки), для внутреннего использования (события)
+   */
+  private createModalDialog(title: string, message: string): ModalWindow {
     const overlay = document.createElement('div');
     overlay.className = 'modal-dialog-overlay';
 
@@ -101,13 +120,19 @@ export class MessageService {
     windowContainer.appendChild(footer);
     overlay.appendChild(windowContainer);
 
-    return { overlay, confirmButton, cancelButton };
+    return {
+      overlay,
+      confirmButton,
+      cancelButton,
+    };
   }
 
   /** 
-   * Смонтировать тост с сообщением.
+   * Смонтировать уведомление с сообщением.
+   * @param toast Уведомление
+   * @param duration Время отображения уведомления в миллисекундах
    */
-  private static mountNotificationToast(toast: HTMLElement, duration: number): void {
+  private mountNotificationToast(toast: HTMLElement, duration: number): void {
     document.body.appendChild(toast);
 
     setTimeout(() => {
@@ -118,31 +143,28 @@ export class MessageService {
 
   /**
    * Вешает все необходимые слушатели на элементы модального окна (кнопки, клик по фону, esc).
+   * @param modal Модальное окно
+   * @param onConfirm Обработчик нажатия на кнопку подтверждения
+   * @param onCancel Обработчик нажатия на кнопку отмены
    */
-  private static bindModalDialogListeners(
-    overlay: HTMLElement,
+  private bindModalDialogListeners(
+    modal: ModalWindow,
     onConfirm: () => void,
     onCancel: () => void
   ): void {
-    const cancelButton = overlay.querySelector('.button-cancel');
-    const confirmButton = overlay.querySelector('.button-confirm');
 
-    if (!cancelButton || !confirmButton) {
-      throw new Error('Не найдены кнопки в модальном окне');
-    }
-
-    cancelButton.addEventListener('click', (e) => {
+    modal.cancelButton.addEventListener('click', (e) => {
       e.stopPropagation();
       onCancel();
     });
 
-    confirmButton.addEventListener('click', (e) => {
+    modal.confirmButton.addEventListener('click', (e) => {
       e.stopPropagation();
       onConfirm();
     });
 
     // Клик вне окна (по затемненному фону) = Отмена
-    overlay.addEventListener('click', (e) => {
+    modal.overlay.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
       if (target.classList.contains('modal-dialog-overlay')) {
         onCancel();
@@ -154,7 +176,7 @@ export class MessageService {
   /**
    * Единая точка очистки DOM и завершения Promise.
    */
-  private static cleanupAndResolve(
+  private cleanupAndResolve(
     overlay: HTMLElement,
     resolve: (value: boolean) => void,
     result: boolean
@@ -165,11 +187,8 @@ export class MessageService {
     resolve(result);
   }
 
-  // ==========================================
-  // PRIVATE: UTILITIES
-  // ==========================================
-
-  private static getIconForMessageType(type: MessageType): string {
+  private getIconForMessageType(type: MessageType): string {
+    /** @todo use font awesome */
     switch (type) {
       case 'success': return '✓';
       case 'error': return '✕';
@@ -178,9 +197,12 @@ export class MessageService {
     }
   }
 
-  private static escapeHtml(str: string): string {
-    if (!str) return '';
-    return str
+  private escapeHtml(text: string): string {
+    if (!text) {
+      return '';
+    }
+
+    return text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -188,3 +210,5 @@ export class MessageService {
       .replace(/'/g, '&#39;');
   }
 }
+
+export const messageService = new MessageService();
