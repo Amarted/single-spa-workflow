@@ -1,6 +1,8 @@
 /**
  * Конфигурация для single-spa
  */
+
+import '@vitejs/plugin-react/preamble'; // Решает проблему "preamble detection" при использовании HMR в single-spa
 import React from 'react';
 import ReactDOMClient from 'react-dom/client';
 import singleSpaReact from 'single-spa-react';
