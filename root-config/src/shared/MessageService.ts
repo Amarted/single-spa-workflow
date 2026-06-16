@@ -1,0 +1,190 @@
+export type MessageType = 'success' | 'error' | 'warning' | 'info';
+
+export class MessageService {
+  /**
+   * Показать тост с сообщением.
+   * @param message Текст сообщения
+   * @param type Тип сообщения
+   * @param duration Продолжительность показа в мс
+   */
+  public static showToast(message: string, type: MessageType = 'info', duration = 3000): void {
+    const toastElement = this.createNotificationToast(message, type);
+    this.mountNotificationToast(toastElement, duration);
+  }
+
+  /**
+   * Показать модальное окно для подтверждения действия пользователем
+   * @param title Заголовок окна
+   * @param message Текст сообщения
+   * @returns Promise<boolean> - результат подтверждения пользователем (true - подтвердил, false - отменил)
+   */
+  public static async showConfirm(title: string, message: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const modal = this.createModalDialog(title, message);
+
+      this.bindModalDialogListeners(
+        modal.overlay,
+        () => { this.cleanupAndResolve(modal.overlay, resolve, true); },
+        () => { this.cleanupAndResolve(modal.overlay, resolve, false); }
+      );
+
+      document.body.appendChild(modal.overlay);
+      modal.overlay.classList.add('is-visible');
+
+      const globalEscapeHandler = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          if (modal.overlay.classList.contains('is-visible')) {
+            this.cleanupAndResolve(modal.overlay, resolve, false);
+            document.removeEventListener('keydown', globalEscapeHandler);
+          }
+        }
+      };
+
+      document.addEventListener('keydown', globalEscapeHandler);
+    });
+  }
+
+  private static createNotificationToast(message: string, type: MessageType): HTMLElement {
+    const toast = document.createElement('div');
+    toast.className = `notification-toast type-${type}`;
+
+    // Иконка
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'notification-icon';
+    iconSpan.textContent = this.getIconForMessageType(type);
+
+    const textSpan = document.createTextNode(this.escapeHtml(message));
+
+    toast.appendChild(iconSpan);
+    toast.appendChild(textSpan);
+
+    return toast;
+  }
+
+  private static createModalDialog(title: string, message: string): {
+    overlay: HTMLElement;
+    confirmButton: HTMLButtonElement;
+    cancelButton: HTMLButtonElement;
+  } {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-dialog-overlay';
+
+    const windowContainer = document.createElement('div');
+    windowContainer.className = 'modal-dialog-window';
+
+    const header = document.createElement('div');
+    header.className = 'modal-dialog-header';
+    header.textContent = this.escapeHtml(title);
+
+    const body = document.createElement('div');
+    body.className = 'modal-dialog-body';
+    body.textContent = this.escapeHtml(message);
+
+    const footer = document.createElement('div');
+    footer.className = 'modal-dialog-footer';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.className = 'button-cancel';
+    cancelButton.textContent = 'Отмена';
+    cancelButton.type = 'button';
+
+    const confirmButton = document.createElement('button');
+    confirmButton.className = 'button-confirm';
+    confirmButton.textContent = 'OK';
+    confirmButton.type = 'button';
+
+    footer.appendChild(cancelButton);
+    footer.appendChild(confirmButton);
+
+    windowContainer.appendChild(header);
+    windowContainer.appendChild(body);
+    windowContainer.appendChild(footer);
+    overlay.appendChild(windowContainer);
+
+    return { overlay, confirmButton, cancelButton };
+  }
+
+  /** 
+   * Смонтировать тост с сообщением.
+   */
+  private static mountNotificationToast(toast: HTMLElement, duration: number): void {
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add('is-hiding');
+      setTimeout(() => { toast.remove(); }, 300); // Ждем завершения CSS анимации
+    }, duration);
+  }
+
+  /**
+   * Вешает все необходимые слушатели на элементы модального окна (кнопки, клик по фону, esc).
+   */
+  private static bindModalDialogListeners(
+    overlay: HTMLElement,
+    onConfirm: () => void,
+    onCancel: () => void
+  ): void {
+    const cancelButton = overlay.querySelector('.button-cancel');
+    const confirmButton = overlay.querySelector('.button-confirm');
+
+    if (!cancelButton || !confirmButton) {
+      throw new Error('Не найдены кнопки в модальном окне');
+    }
+
+    cancelButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onCancel();
+    });
+
+    confirmButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onConfirm();
+    });
+
+    // Клик вне окна (по затемненному фону) = Отмена
+    overlay.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('modal-dialog-overlay')) {
+        onCancel();
+      }
+    });
+
+  }
+
+  /**
+   * Единая точка очистки DOM и завершения Promise.
+   */
+  private static cleanupAndResolve(
+    overlay: HTMLElement,
+    resolve: (value: boolean) => void,
+    result: boolean
+  ): void {
+    if (overlay.parentNode) {
+      overlay.remove();
+    }
+    resolve(result);
+  }
+
+  // ==========================================
+  // PRIVATE: UTILITIES
+  // ==========================================
+
+  private static getIconForMessageType(type: MessageType): string {
+    switch (type) {
+      case 'success': return '✓';
+      case 'error': return '✕';
+      case 'warning': return '⚠';
+      default: return 'ℹ';
+    }
+  }
+
+  private static escapeHtml(str: string): string {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+}

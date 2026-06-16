@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "workflow-table": "http://localhost:5001/dist/spa.js",
+    "workflow-diagram": "http://localhost:5002/dist/spa.js"
+  }
+}

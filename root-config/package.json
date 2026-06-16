@@ -1,0 +1,26 @@
+{
+  "name": "root-config",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.9.3",
+    "eslint": "^10.5.0",
+    "globals": "^17.6.0",
+    "sass": "^1.101.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.61.0",
+    "vite": "^8.0.12",
+    "vite-plugin-single-spa": "^2.1.1"
+  },
+  "dependencies": {
+    "rxjs": "^7.8.2",
+    "single-spa": "^6.0.3"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "workflow-table": "http://localhost:5001/src/spa.ts",
+    "workflow-diagram": "http://localhost:5002/src/spa.tsx"
+  }
+}
