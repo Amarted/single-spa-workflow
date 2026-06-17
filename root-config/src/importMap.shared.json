@@ -1,0 +1,12 @@
+{
+  "imports": {
+    "@shared/EventBus": "http://localhost:5000/src/shared/EventBus.ts",
+    "@shared/MessageService": "http://localhost:5000/src/shared/MessageService.ts",
+    "@shared/workflow/WorkflowEvents": "http://localhost:5000/src/shared/workflow/WorkflowEvents.ts",
+    "@shared/workflow/api/WorkflowApiService": "http://localhost:5000/src/shared/workflow/api/WorkflowApiService.ts",
+    "@shared/workflow/errors/ValidationError": "http://localhost:5000/src/shared/workflow/errors/ValidationError.ts",
+    "@shared/workflow/interfaces/Workflow": "http://localhost:5000/src/shared/workflow/interfaces/Workflow.ts",
+    "@shared/workflow/interfaces/WorkflowStep": "http://localhost:5000/src/shared/workflow/interfaces/WorkflowStep.ts",
+    "@shared/workflow/store/WorkflowStore": "http://localhost:5000/src/shared/workflow/store/WorkflowStore.ts"
+  }
+}
