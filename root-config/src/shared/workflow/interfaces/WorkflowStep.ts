@@ -1,25 +1,17 @@
-
 /**
- * Cвязь между шагами рабочего процесса
- */
-export interface WorkflowStepTransition {
-  source: WorkflowStep;
-  destination: WorkflowStep;
-}
-
-/**
- * Шаг/состояние рабочего процесса
+ * Шаг рабочего процесса
  */
 export interface WorkflowStep {
-  id: string;
-  /** Название шага/состояния */
+  /** Порядковый номер, уникальный идентификатор шага в рамках процесса */
+  initialIndex: number;
+  /** Название шага */
   name: string;
   /** Цвет шага */
-  color: string;
+  color?: string;
   /** Координата х шага на диаграмме */
   x: number;
   /** Координата y шага на диаграмме */
   y: number;
-  /** Связи между шагами */
-  transitions: WorkflowStepTransition[];
+  /** Связи между шагами (список initialIndex) */
+  nextSteps: number[];
 }
