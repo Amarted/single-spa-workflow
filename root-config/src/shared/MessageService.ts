@@ -12,7 +12,7 @@ interface ModalWindow {
   cancelButton: HTMLButtonElement;
 }
 
-class MessageService {
+export class MessageService {
   /**
    * Показать тост с сообщением.
    * @param message Текст сообщения
