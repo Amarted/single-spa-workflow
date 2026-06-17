@@ -3,9 +3,7 @@ import { workflowStore } from '@shared/workflow/store/WorkflowStore';
 import { messageService } from '@shared/MessageService';
 import './styles/root-style.scss';
 
-/**
- * Данные одного микро-фронтенда
- */
+/** Данные одного микро-фронтенда */
 interface Frontend {
   name: string;
   route: string;
@@ -52,7 +50,7 @@ start();
 async function initState(): Promise<void> {
   try {
     // Загрузим состояние шагов рабочего процесса с сервера
-    await workflowStore.loadFromServer();
+    await workflowStore.loadWorkflow();
   } catch (error) {
     messageService.showToast('Не удалось загрузить данные с сервера. Возможно он не доступен', 'error');
     console.error(error);
