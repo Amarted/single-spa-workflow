@@ -1,21 +1,21 @@
+import type { AppEventMap } from './workflow/WorkflowEvents';
+
 /**
  * Callback для событий в шине
  */
-interface EventCallback<T> {
-  (event: T): void;
-}
+type EventCallback<E> = (event: E) => void;
 /**
  * Шина событий, для обмена данными между компонентами
  */
-class EventBus<T = any> {
-  private listeners: Map<string, EventCallback<T>[]> = new Map();
+export class EventBus<EventMap = AppEventMap> {
+  private listeners = new Map<keyof EventMap, EventCallback<EventMap[any]>[]>(); // ключи из EventMap — это имена событий
 
   /**
    * Регистрация обработчика события
    * @param eventName Название события 
    * @param callback Обработчик события 
    */
-  public on(eventName: string, callback: EventCallback<T>): void {
+  public on<K extends keyof EventMap>(eventName: K, callback: EventCallback<EventMap[K]>): void {
     if (!this.listeners.has(eventName)) {
       this.listeners.set(eventName, []);
     }
@@ -27,7 +27,7 @@ class EventBus<T = any> {
    * @param eventName Название события 
    * @param event Данные события 
    */
-  public emit(eventName: string, event: T): void {
+  public emit<K extends keyof EventMap>(eventName: K, event: EventMap[K]): void {
     const callbacks = this.listeners.get(eventName);
     if (callbacks) {
       callbacks.forEach(cb => cb(event));
@@ -41,7 +41,7 @@ class EventBus<T = any> {
    * @param eventName Название события 
    * @param callback Обработчик события, котоырй нужно отключить
    */
-  public off(eventName: string, callback?: EventCallback<T>): void {
+  public off<K extends keyof EventMap>(eventName: K, callback?: EventCallback<EventMap[K]>): void {
     if (!this.listeners.has(eventName)) return;
     const callbacks = this.listeners.get(eventName)!;
     if (callback) {

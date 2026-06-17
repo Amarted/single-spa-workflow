@@ -4,20 +4,17 @@
 import type { WorkflowStep } from './interfaces/WorkflowStep';
 
 /** Событие удаления шага */
-export type WorkflowStepDeletedEvent = CustomEvent<{ id: string }>;
+export type WorkflowStepDeletedEvent = CustomEvent<{ index: number }>;
 /** Событие добавления шага */
-export type WorkflowStepAddedEvent = CustomEvent<{ step: WorkflowStep }>;
+export type WorkflowStepCreatedEvent = CustomEvent<{ step: WorkflowStep }>;
 /** Событие обновления шага */
-export type WorkflowStepUpdatedEvent = CustomEvent<{ step: WorkflowStep }>;
+export type WorkflowStepNameChangedEvent = CustomEvent<{ index: number, name: string }>;
 /** Событие выбора шага */
-export type WorkflowStepSelectedEvent = CustomEvent<{ id: string }>;
+export type WorkflowStepSelectedEvent = CustomEvent<{ index: number }>;
 
-// Расширяем глобальный мап событий браузера, для описания и автокомплита для возможных событий
-declare global {
-  interface WindowEventMap {
-    'wf-step-deleted': WorkflowStepDeletedEvent;
-    'wf-step-added': WorkflowStepAddedEvent;
-    'wf-step-updated': WorkflowStepUpdatedEvent;
-    'wf-select-step': WorkflowStepSelectedEvent;
-  }
-}
+export type AppEventMap = {
+  'wf-step-deleted': CustomEvent<{ index: number }>;
+  'wf-step-created': CustomEvent<{ step: WorkflowStep }>;
+  'wf-step-name-changed': CustomEvent<{ index: number; name: string }>;
+  'wf-step-selected': CustomEvent<{ index: number }>;
+};
