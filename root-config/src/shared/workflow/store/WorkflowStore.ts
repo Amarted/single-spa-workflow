@@ -99,11 +99,21 @@ export class WorkflowStore {
       };
     }
     // Имя шага должно быть уникальным
-    const nameIsNotUnique = steps.some(step => step.name === newName && step !== existingStep);
+    const nameIsNotUnique = steps.some(step => step.name === newName && step.initialIndex !== existingStep.initialIndex);
     if (nameIsNotUnique) {
       return {
         ok: false,
         error: new ValidationError('Название шага должно быть уникальным'),
+      };
+    }
+    // Имя не изменилось, вернём текущие данные без обновлениея, и не дёргая сервер лишний раз
+    if (existingStep.name === newName) {
+      return {
+        ok: true,
+        value: {
+          name: this.nameStream.getValue(),
+          steps: this.stepsStream.getValue(),
+        },
       };
     }
 
