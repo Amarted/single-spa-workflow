@@ -1,15 +1,14 @@
-import { BehaviorSubject, type Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { type WorkflowStep } from '../interfaces/WorkflowStep';
-import { eventBus, type EventBus } from '../../EventBus';
 import { workflowApiService, type WorkflowApiService } from '../api/WorkflowApiService';
-import { ValidationError } from '../errors/ValidationError';
-import { messageService, type MessageService } from '../../MessageService';
+import { ValidationError } from '../../errors/ValidationError';
 import type { Workflow } from '../interfaces/Workflow';
+import type { Result } from '../../Result';
 
 /**
  * Сервис для управления состоянием рабочего процесса
  * 
- * - Валидирует изменение состояния, чтобы оно всегда оставалось корректным
+ * - Валидирует изменение состояния, чтобы инварианты были соблюдены
  * - Синхронизирует состояние UI с серверным состоянием
  * - Использует оптимистичное обновление UI
  */
@@ -24,17 +23,9 @@ export class WorkflowStore {
   /** Список шагов для чтения */
   public readonly steps = this.stepsStream.asObservable();
 
-  /** Флаг инициализации */
-  private initialized = false;
-
   public constructor(
     private readonly workflowApi: WorkflowApiService,
-    private readonly eventBus: EventBus,
-    private readonly messageService: MessageService,
-  ) {
-    // Автоматически инициализируем (подписка на события)
-    this.init();
-  }
+  ) { }
 
   /** 
    * Установить новый процесс 
@@ -47,42 +38,45 @@ export class WorkflowStore {
   }
 
   /**
-  * Добавление нового шага
+  * Создание нового шага
+  * @param workflowName Имя рабочего процесса, в котором создаётся новый шаг
   * @param newStep Новый шаг
-  * @returns true — если успешно, ValidationError — если ошибка валидации (например, неуникальное название)
+  * @returns Результат с обновлённым процессом или ошибкой валидации
   */
-  public async addStep(newStep: WorkflowStep): Promise<true | ValidationError> {
+  public async createStep(workflowName: string, newStep: WorkflowStep): Promise<Result<WorkflowStep, ValidationError>> {
     const steps = this.stepsStream.getValue();
 
-    // Клиентская валидация уникальности имени (опционально, чтобы не ходить на сервер лишний раз)
+    // Имя должно быть уникально
     const nameIsNotUnique = steps.some(step => step.name === newStep.name);
     if (nameIsNotUnique) {
-      return new ValidationError(`Шаг с названием ${newStep.name} уже существует`);
+      return {
+        ok: false,
+        error: new ValidationError(`Шаг с названием ${newStep.name} уже существует`),
+      };
     }
-
-    // Валидация уникальности индекса 
+    // Индес должен быть уникальным в пределах процесса
     const indexIsNotUnique = steps.some(step => step.initialIndex === newStep.initialIndex);
     if (indexIsNotUnique) {
-      return new ValidationError(`Шаг с индексом ${newStep.initialIndex} уже существует`);
+      return {
+        ok: false,
+        error: new ValidationError(`Шаг с индексом ${newStep.initialIndex} уже существует`),
+      };
     }
 
-    // Оптимистичное обновление UI
-    this.stepsStream.next([...steps, newStep]);
-
-    // И синхронизация с сервером
-    try {
-      await this.workflowApi.createStep(newStep);
-
-      return true;
-    } catch (error) {
-      // Откат изменений, логирование, оповещение пользователя
-      this.stepsStream.next(steps);
-
-      const errorMessage = `Ошибка создания шага. ${error instanceof Error ? error.message : ''}`;
-      this.messageService.showToast(errorMessage, 'error');
-
-      throw error;
-    }
+    // Оптимистичное обновление состояния. Сохраняем старое, для отката в случае ошибки синхронизации с сервером
+    const oldSteps = [...steps];
+    return this.withOptimisticUpdate({
+      update: () => this.stepsStream.next([...steps, newStep]),
+      rollback: () => this.stepsStream.next(oldSteps),
+      action: () => this.workflowApi.createStep({
+        wfName: workflowName,
+        stepName: newStep.name,
+        x: newStep.x,
+        y: newStep.y,
+        color: newStep.color,
+        nextSteps: newStep.nextSteps,
+      }),
+    });
   }
 
   /**
@@ -91,113 +85,105 @@ export class WorkflowStore {
    * Название шага должно быть уникальным
    * @param stepIndex Индекс шага
    * @param newName Новое название
-   * @returns true - если успешно, ValidationError - если ошибка валидации
+   * @returns Результат с обновлённым процессом или ошибкой валидации
    */
-  public async changeStepName(stepIndex: number, newName: string): Promise<true | ValidationError> {
+  public async changeStepName(stepIndex: number, newName: string): Promise<Result<Workflow, ValidationError>> {
     const steps = this.stepsStream.getValue();
-    const existingStep = steps.find(s => s.initialIndex === stepIndex);
-    if (!existingStep) {
-      return new ValidationError('Шаг не существует');
-    }
 
+    // Шаг должен существовать
+    const existingStep = steps.find(step => step.initialIndex === stepIndex);
+    if (!existingStep) {
+      return {
+        ok: false,
+        error: new ValidationError('Шаг не существует'),
+      };
+    }
+    // Имя шага должно быть уникальным
     const nameIsNotUnique = steps.some(step => step.name === newName && step !== existingStep);
     if (nameIsNotUnique) {
-      return new ValidationError('Название шага должно быть уникальным');
+      return {
+        ok: false,
+        error: new ValidationError('Название шага должно быть уникальным'),
+      };
     }
 
-    // Сохраняем старое состояние для отката
-    const oldSteps = [...steps];
-
-    // Оптимистичное обновление
+    // Оптимистичное обновление состояния.
     const updatedStep = { ...existingStep, name: newName };
-    this.stepsStream.next(
-      steps.map(step => step.initialIndex === updatedStep.initialIndex ? updatedStep : step)
-    );
-
-    try {
-      await this.workflowApi.changeStepName(updatedStep);
-
-      return true;
-    } catch (error) {
-      // Откат изменений
-      this.stepsStream.next(oldSteps);
-      const errorMessage = `Ошибка изменения названия шага. ${error instanceof Error ? error.message : ''}`;
-      this.messageService.showToast(errorMessage, 'error');
-
-      throw error;
-    }
-  }
-
-  /**
-    * Удаление шага
-    * @param index Индекс шага для удаления
-    */
-  public async removeStep(index: number): Promise<void> {
-    const steps = this.stepsStream.getValue();
-    const stepToRemove = steps.find(s => s.initialIndex === index);
-    if (!stepToRemove) return;
-
-    // Сохраняем старое состояние для отката
     const oldSteps = [...steps];
-
-    // Оптимистичное удаление
-    this.stepsStream.next(
-      steps.filter(s => s.initialIndex !== index)
-    );
-
-    try {
-      await this.workflowApi.deleteStep(stepToRemove);
-    } catch (error) {
-      // Откат изменений
-      this.stepsStream.next(oldSteps);
-      const errorMessage = `Ошибка удаления шага. ${error instanceof Error ? error.message : ''}`;
-      this.messageService.showToast(errorMessage, 'error');
-
-      throw error;
-    }
+    return this.withOptimisticUpdate({
+      update: () => this.stepsStream.next(
+        steps.map(step => step.initialIndex === updatedStep.initialIndex ? updatedStep : step)
+      ),
+      rollback: () => this.stepsStream.next(oldSteps),
+      action: () => this.workflowApi.changeStepName({
+        stepInitialIndex: updatedStep.initialIndex,
+        stepName: updatedStep.name,
+      }),
+    });
   }
 
   /**
-   * Уничтожение стора
-   * 
-   * Отписка от событий изменения данных и завершение потока для отмены подписок всех получателей
+   * Удаление шага из рабочего процесса
+   * @param workflowName Название процесса, в котором нужно удалить шаг
+   * @param index Индекс шага для удаления
    */
+  public async removeStep(workflowName: string, index: number): Promise<Result<Workflow, ValidationError>> {
+    const steps = this.stepsStream.getValue();
+
+    // Шаг должен существовать
+    const stepToRemove = steps.find(step => step.initialIndex === index);
+    if (!stepToRemove) {
+      return {
+        ok: false,
+        error: new ValidationError('Не найден шаг для удаления'),
+      };
+    }
+
+    // Оптимистичное обновление состояния.
+    const oldSteps = [...steps];
+    return this.withOptimisticUpdate({
+      update: () => this.stepsStream.next(
+        steps.filter(step => step.initialIndex !== index)
+      ),
+      rollback: () => this.stepsStream.next(oldSteps),
+      action: () => this.workflowApi.deleteStep({
+        wfName: workflowName,
+        stepInitialIndex: index,
+      }),
+    });
+  }
+
+  /** Уничтожение стора. Завершение потока для отмены подписок всех получателей */
   public destroy(): void {
     this.stepsStream.complete();
-    this.eventBus.off('wf-step-created');
-    this.eventBus.off('wf-step-name-changed');
-    this.eventBus.off('wf-step-deleted');
-
-    this.initialized = false;
   }
 
   /**
-   * Инициализация (подписка на события)
+   * Выполняет действие, с оптимистичным обновлением состояния
+   * 
+   * Откатывает обновления в случае ошибок
+   * @param configuration Конфигурация с функциями обновления/отката состояния, и выполняемым действием 
+   * @returns Результат выполнения действия 
    */
-  private init(): void {
-    if (this.initialized) {
-      return;
-    }
-
-    this.initialized = true;
-
-    this.eventBus.on('wf-step-created', (event) => this.addStep(event.detail.step));
-    this.eventBus.on('wf-step-name-changed', (event) => this.changeStepName(event.detail.index, event.detail.name));
-    this.eventBus.on('wf-step-deleted', (event) => this.removeStep(event.detail.index));
-  }
-
-  /**
-   * Загрузка состояния workflow с сервера
-   */
-  public async loadWorkflow(name?: string): Promise<void> {
+  private async withOptimisticUpdate<T, E>(configuration: {
+    update: () => void;
+    rollback: () => void;
+    action: () => Promise<Result<T, E>>;
+  }): Promise<Result<T, E>> {
+    const { update, rollback, action } = configuration;
     try {
-      const workflow = await this.workflowApi.getWorkflow({ wfName: name });
+      update();
 
-      this.setWorkflow(workflow);
+      const result = await action();
+      if (!result.ok) {
+        // Ошибка бизнес-логики (валидация и т.д.) - откат изменений, но не прерываем операцию, а возвращаем результат с ошибкой для обработки в UI
+        rollback();
+      }
+
+      return result;
     } catch (error) {
-      const errorMessage = `Ошибка загрузки шагов. ${error instanceof Error ? error.message : ''}`;
-      this.messageService.showToast(errorMessage, 'error');
-
+      // Что-то пошло не так - откат изменений, и проброс ошибки дальше
+      rollback();
       throw error;
     }
   }
@@ -207,6 +193,4 @@ export class WorkflowStore {
 // Экземпляр стора
 export const workflowStore = new WorkflowStore(
   workflowApiService,
-  eventBus,
-  messageService,
 );
