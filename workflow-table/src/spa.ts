@@ -26,7 +26,6 @@ const vueLifecycles = singleSpaVue({
   handleInstance: (vueApplication: App) => {
     const pinia = createPinia();
     vueApplication.use(pinia);
-    console.log('init vue pnia');
   },
 });
 
@@ -35,6 +34,9 @@ const unmountStore = () => {
   destroy();
 };
 
+// eslint-disable-next-line @typescript-eslint/unbound-method
 export const bootstrap = vueLifecycles.bootstrap;
+// eslint-disable-next-line @typescript-eslint/unbound-method
 export const mount = vueLifecycles.mount;
+// eslint-disable-next-line @typescript-eslint/unbound-method
 export const unmount = [vueLifecycles.unmount, unmountStore];
