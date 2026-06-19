@@ -66,7 +66,7 @@ export class WorkflowStore {
     // Оптимистичное обновление состояния. Сохраняем старое, для отката в случае ошибки синхронизации с сервером
     const oldSteps = [...steps];
     return this.withOptimisticUpdate({
-      update: () => this.stepsStream.next([...steps, newStep]),
+      optimisticUpdate: () => this.stepsStream.next([...steps, newStep]),
       rollback: () => this.stepsStream.next(oldSteps),
       action: () => this.workflowApi.createStep({
         wfName: workflowName,
@@ -76,6 +76,7 @@ export class WorkflowStore {
         color: newStep.color,
         nextSteps: newStep.nextSteps,
       }),
+      realUpdate: (realValue) => this.stepsStream.next([...oldSteps, realValue]),
     });
   }
 
@@ -121,7 +122,7 @@ export class WorkflowStore {
     const updatedStep = { ...existingStep, name: newName };
     const oldSteps = [...steps];
     return this.withOptimisticUpdate({
-      update: () => this.stepsStream.next(
+      optimisticUpdate: () => this.stepsStream.next(
         steps.map(step => step.initialIndex === updatedStep.initialIndex ? updatedStep : step)
       ),
       rollback: () => this.stepsStream.next(oldSteps),
@@ -129,6 +130,7 @@ export class WorkflowStore {
         stepInitialIndex: updatedStep.initialIndex,
         stepName: updatedStep.name,
       }),
+      realUpdate: (realValue) => this.stepsStream.next(realValue.steps),
     });
   }
 
@@ -152,7 +154,7 @@ export class WorkflowStore {
     // Оптимистичное обновление состояния.
     const oldSteps = [...steps];
     return this.withOptimisticUpdate({
-      update: () => this.stepsStream.next(
+      optimisticUpdate: () => this.stepsStream.next(
         steps.filter(step => step.initialIndex !== index)
       ),
       rollback: () => this.stepsStream.next(oldSteps),
@@ -160,6 +162,7 @@ export class WorkflowStore {
         wfName: workflowName,
         stepInitialIndex: index,
       }),
+      realUpdate: (realValue) => this.stepsStream.next(realValue.steps),
     });
   }
 
@@ -171,21 +174,29 @@ export class WorkflowStore {
   /**
    * Выполняет действие, с оптимистичным обновлением состояния
    * 
-   * Откатывает обновления в случае ошибок
+   * Откатывает оптимистичные обновления в случае ошибки в результате действия.
    * @param configuration Конфигурация с функциями обновления/отката состояния, и выполняемым действием 
    * @returns Результат выполнения действия 
    */
   private async withOptimisticUpdate<T, E>(configuration: {
-    update: () => void;
+    /** Оптимистичное обновление, выполняемое сразу */
+    optimisticUpdate: () => void;
+    /** Откат оптимистичного обновления к прежнему состоянию */
     rollback: () => void;
+    /** Асинхронное действие, которое выполняется после оптимистичного обновления для получения реального значения */
     action: () => Promise<Result<T, E>>;
+    /** Обновление реальным значением, полученным после выполнения действия */
+    realUpdate: (realValue: T) => void;
   }): Promise<Result<T, E>> {
-    const { update, rollback, action } = configuration;
+    const { optimisticUpdate, rollback, action, realUpdate } = configuration;
     try {
-      update();
+      optimisticUpdate();
 
       const result = await action();
-      if (!result.ok) {
+      if (result.ok) {
+        // Обновим реальным значением, полученным с сервера (могут быть серверные изменения)
+        realUpdate(result.value);
+      } else {
         // Ошибка бизнес-логики (валидация и т.д.) - откат изменений, но не прерываем операцию, а возвращаем результат с ошибкой для обработки в UI
         rollback();
       }
