@@ -30,191 +30,202 @@ describe('WorkflowStore', () => {
     store.setWorkflow({ name: 'Test', steps: [...initialSteps] });
   });
 
-  it('не должен создавать шаг при дубликате имени (клиентская валидация)', async () => {
-    const duplicateStep: WorkflowStep = { ...initialSteps[0], initialIndex: 99 };
+  // Тестируем создание/добавление шага
+  describe('createStep', () => {
+    it('не должен создавать шаг при дубликате имени (клиентская валидация)', async () => {
+      const duplicateStep: WorkflowStep = { ...initialSteps[0], initialIndex: 99 };
 
-    const result = await store.createStep('wf-name', duplicateStep);
+      const result = await store.createStep('wf-name', duplicateStep);
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error).toBeInstanceOf(ValidationError);
-      expect(result.error.message).toContain('уже существует');
-    }
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.message).toContain('уже существует');
+      }
 
-    expect(workflowApiService.createStep).not.toHaveBeenCalled();
-    expect(store.stepsStream.getValue().length).toBe(initialSteps.length);
-  });
-
-  it('не должен создавать шаг при дубликате индекса (клиентская валидация)', async () => {
-    const duplicateIndexStep: WorkflowStep = {
-      ...initialSteps[0],
-      name: 'New Step 1',
-    };
-
-    const result = await store.createStep('wf-name', duplicateIndexStep);
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error).toBeInstanceOf(ValidationError);
-      expect(result.error.message).toContain('уже существует');
-    }
-
-    expect(workflowApiService.createStep).not.toHaveBeenCalled();
-    expect(store.stepsStream.getValue().length).toBe(initialSteps.length);
-  });
-
-  it('откатывает изменения при ошибке сервера (ValidationError)', async () => {
-    const newStep: WorkflowStep = {
-      initialIndex: 2, name: 'New Step', x: 10, y: 20, color: '#000', nextSteps: []
-    };
-
-    vi.spyOn(workflowApiService, 'createStep').mockResolvedValue({
-      ok: false,
-      error: new ValidationError('Server validation error')
+      expect(workflowApiService.createStep).not.toHaveBeenCalled();
+      expect(store.stepsStream.getValue().length).toBe(initialSteps.length);
     });
 
-    const initialLength = store.stepsStream.getValue().length;
-    const result = await store.createStep('wf-name', newStep);
+    it('не должен создавать шаг при дубликате индекса (клиентская валидация)', async () => {
+      const duplicateIndexStep: WorkflowStep = {
+        ...initialSteps[0],
+        name: 'New Step 1',
+      };
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error).toBeInstanceOf(ValidationError);
-    }
+      const result = await store.createStep('wf-name', duplicateIndexStep);
 
-    expect(store.stepsStream.getValue().length).toBe(initialLength);
-  });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.message).toContain('уже существует');
+      }
 
-  it('успешно создает шаг при отсутствии ошибок, и получает значение с сервера', async () => {
-    const newStep: WorkflowStep = {
-      initialIndex: 2, name: 'New Step', x: 10, y: 20, color: 'black', nextSteps: []
-    };
-
-    vi.spyOn(workflowApiService, 'createStep').mockResolvedValue({
-      ok: true,
-      value: { ...newStep, color: 'red' } // Допустим сервер изменил цвет
+      expect(workflowApiService.createStep).not.toHaveBeenCalled();
+      expect(store.stepsStream.getValue().length).toBe(initialSteps.length);
     });
 
-    const result = await store.createStep('wf-name', newStep);
+    it('откатывает изменения при ошибке сервера (ValidationError)', async () => {
+      const newStep: WorkflowStep = {
+        initialIndex: 2, name: 'New Step', x: 10, y: 20, color: '#000', nextSteps: []
+      };
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      // Ответ должен быть такой, как вернул сервер (x: 100)
-      expect(result.value.color).toBe('red');
-    }
+      vi.spyOn(workflowApiService, 'createStep').mockResolvedValue({
+        ok: false,
+        error: new ValidationError('Server validation error')
+      });
 
-    const steps = store.stepsStream.getValue();
-    // Шаг добавился
-    expect(steps.length).toBe(initialSteps.length + 1);
-    // UI обновил оптимистичное клиентское значение ('black'), реальным значением с сервера ('red')
-    expect(steps[1].color).toEqual('red');
-  });
+      const initialLength = store.stepsStream.getValue().length;
+      const result = await store.createStep('wf-name', newStep);
 
-  it('не меняет имя, если шаг не найден', async () => {
-    const result = await store.changeStepName(999, 'New Name');
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toBeInstanceOf(ValidationError);
+      }
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.message).toBe('Шаг не существует');
-    }
-
-    expect(workflowApiService.changeStepName).not.toHaveBeenCalled();
-  });
-
-  it('успешно сохраняет без изменений, если имя осталось тем же', async () => {
-    const initialName = store.stepsStream.getValue()[0].name;
-
-    const result = await store.changeStepName(1, initialName); // то же имя
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.steps[0].name).toBe(initialName);
-    }
-
-    expect(workflowApiService.changeStepName).not.toHaveBeenCalled();
-  })
-
-  it('не меняет имя, если оно дублируется у другого шага', async () => {
-    // Сначала добавим второй шаг
-    store.setWorkflow({
-      name: 'Test',
-      steps: [
-        ...initialSteps,
-        { initialIndex: 2, name: 'Step 2', x: 10, y: 10, color: '#000', nextSteps: [] }
-      ]
+      expect(store.stepsStream.getValue().length).toBe(initialLength);
     });
 
-    // Теперь попробуем переименовать Step 1 в Step 2
-    const result = await store.changeStepName(1, 'Step 2');
+    it('успешно создает шаг при отсутствии ошибок, и получает значение с сервера', async () => {
+      const newStep: WorkflowStep = {
+        initialIndex: 2, name: 'New Step', x: 10, y: 20, color: 'black', nextSteps: []
+      };
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.message).toBe('Название шага должно быть уникальным');
-    }
+      vi.spyOn(workflowApiService, 'createStep').mockResolvedValue({
+        ok: true,
+        value: { ...newStep, color: 'red' } // Допустим сервер изменил цвет
+      });
 
-    expect(workflowApiService.changeStepName).not.toHaveBeenCalled();
+      const result = await store.createStep('wf-name', newStep);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        // Ответ должен быть такой, как вернул сервер (x: 100)
+        expect(result.value.color).toBe('red');
+      }
+
+      const steps = store.stepsStream.getValue();
+      // Шаг добавился
+      expect(steps.length).toBe(initialSteps.length + 1);
+      // UI обновил оптимистичное клиентское значение ('black'), реальным значением с сервера ('red')
+      expect(steps[1].color).toEqual('red');
+    });
   });
 
-  it('успешно меняет имя шага', async () => {
-    vi.spyOn(workflowApiService, 'changeStepName').mockResolvedValue({
-      ok: true,
-      value: { name: 'Test', steps: [{ ...initialSteps[0], name: 'Updated' }] }
+
+  // Тестируем изменение имени шага
+  describe('changeStepName', () => {
+    it('не меняет имя, если шаг не найден', async () => {
+      const result = await store.changeStepName(999, 'New Name');
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toBe('Шаг не существует');
+      }
+
+      expect(workflowApiService.changeStepName).not.toHaveBeenCalled();
     });
 
-    const result = await store.changeStepName(1, 'Updated');
+    it('успешно сохраняет без изменений, если имя осталось тем же', async () => {
+      const initialName = store.stepsStream.getValue()[0].name;
 
-    expect(result.ok).toBe(true);
+      const result = await store.changeStepName(1, initialName); // то же имя
 
-    const steps = store.stepsStream.getValue();
-    expect(steps[0].name).toBe('Updated');
-  });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.steps[0].name).toBe(initialName);
+      }
 
-  it('откатывает изменение имени при ошибке сервера', async () => {
-    vi.spyOn(workflowApiService, 'changeStepName').mockResolvedValue({
-      ok: false,
-      error: new ValidationError('Server error')
+      expect(workflowApiService.changeStepName).not.toHaveBeenCalled();
+    })
+
+    it('не меняет имя, если оно дублируется у другого шага', async () => {
+      // Сначала добавим второй шаг
+      store.setWorkflow({
+        name: 'Test',
+        steps: [
+          ...initialSteps,
+          { initialIndex: 2, name: 'Step 2', x: 10, y: 10, color: '#000', nextSteps: [] }
+        ]
+      });
+
+      // Теперь попробуем переименовать Step 1 в Step 2
+      const result = await store.changeStepName(1, 'Step 2');
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toBe('Название шага должно быть уникальным');
+      }
+
+      expect(workflowApiService.changeStepName).not.toHaveBeenCalled();
     });
 
-    const initialName = store.stepsStream.getValue()[0].name;
-    await store.changeStepName(1, 'New Name');
+    it('успешно меняет имя шага', async () => {
+      vi.spyOn(workflowApiService, 'changeStepName').mockResolvedValue({
+        ok: true,
+        value: { name: 'Test', steps: [{ ...initialSteps[0], name: 'Updated' }] }
+      });
 
-    // Проверяем откат
-    expect(store.stepsStream.getValue()[0].name).toBe(initialName);
-  });
+      const result = await store.changeStepName(1, 'Updated');
 
-  it('не удаляет шаг, если не найден', async () => {
-    const result = await store.removeStep('wf-name', 999);
+      expect(result.ok).toBe(true);
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.message).toBe('Не найден шаг для удаления');
-    }
-
-    expect(workflowApiService.deleteStep).not.toHaveBeenCalled();
-  });
-
-  it('успешно удаляет шаг', async () => {
-    vi.spyOn(workflowApiService, 'deleteStep').mockResolvedValue({
-      ok: true,
-      value: { name: 'Test', steps: [] }
+      const steps = store.stepsStream.getValue();
+      expect(steps[0].name).toBe('Updated');
     });
 
-    const result = await store.removeStep('wf-name', 1);
+    it('откатывает изменение имени при ошибке сервера', async () => {
+      vi.spyOn(workflowApiService, 'changeStepName').mockResolvedValue({
+        ok: false,
+        error: new ValidationError('Server error')
+      });
 
-    expect(result.ok).toBe(true);
+      const initialName = store.stepsStream.getValue()[0].name;
+      await store.changeStepName(1, 'New Name');
 
-    expect(store.stepsStream.getValue().length).toBe(0);
+      // Проверяем откат
+      expect(store.stepsStream.getValue()[0].name).toBe(initialName);
+    });
   });
 
-  it('откатывает удаление при ошибке сервера', async () => {
-    vi.spyOn(workflowApiService, 'deleteStep').mockResolvedValue({
-      ok: false,
-      error: new ValidationError('Server error')
+  // Удаление шага
+  describe('removeStep', () => {
+    it('не удаляет шаг, если не найден', async () => {
+      const result = await store.removeStep('wf-name', 999);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toBe('Не найден шаг для удаления');
+      }
+
+      expect(workflowApiService.deleteStep).not.toHaveBeenCalled();
     });
 
-    const initialLength = store.stepsStream.getValue().length;
-    await store.removeStep('wf-name', 1);
+    it('успешно удаляет шаг', async () => {
+      vi.spyOn(workflowApiService, 'deleteStep').mockResolvedValue({
+        ok: true,
+        value: { name: 'Test', steps: [] }
+      });
 
-    expect(store.stepsStream.getValue().length).toBe(initialLength);
+      const result = await store.removeStep('wf-name', 1);
+
+      expect(result.ok).toBe(true);
+
+      expect(store.stepsStream.getValue().length).toBe(0);
+    });
+
+    it('откатывает удаление при ошибке сервера', async () => {
+      vi.spyOn(workflowApiService, 'deleteStep').mockResolvedValue({
+        ok: false,
+        error: new ValidationError('Server error')
+      });
+
+      const initialLength = store.stepsStream.getValue().length;
+      await store.removeStep('wf-name', 1);
+
+      expect(store.stepsStream.getValue().length).toBe(initialLength);
+    });
+
   });
 
   it('откатывает изменения при системной ошибке (ApiError)', async () => {
