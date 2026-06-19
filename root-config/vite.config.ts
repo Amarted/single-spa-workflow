@@ -1,4 +1,3 @@
-import path from 'path';
 import { defineConfig } from 'vite';
 import vitePluginSingleSpa from 'vite-plugin-single-spa';
 
@@ -79,5 +78,5 @@ export default defineConfig({
       // через resolveId, который возвращает полный URL с external: true.
       // '@shared': path.resolve(__dirname, './src/shared'),
     }
-  }
+  },
 });
