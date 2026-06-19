@@ -64,8 +64,8 @@ export class WorkflowStore {
     // Оптимистичное обновление состояния. Сохраняем старое, для отката в случае ошибки синхронизации с сервером
     const oldSteps = [...steps];
     return this.withOptimisticUpdate({
-      optimisticUpdate: () => this.stepsStream.next([...steps, newStep]),
-      rollback: () => this.stepsStream.next(oldSteps),
+      optimisticUpdate: () => { this.stepsStream.next([...steps, newStep]); },
+      rollback: () => { this.stepsStream.next(oldSteps); },
       action: () => this.workflowApi.createStep({
         wfName: workflowName,
         stepName: newStepData.name,
@@ -74,7 +74,7 @@ export class WorkflowStore {
         color: newStepData.color,
         nextSteps: newStepData.nextSteps,
       }),
-      realUpdate: (realValue) => this.stepsStream.next([...oldSteps, realValue]),
+      realUpdate: (realValue) => { this.stepsStream.next([...oldSteps, realValue]); },
     });
   }
 
@@ -120,15 +120,17 @@ export class WorkflowStore {
     const updatedStep = { ...existingStep, name: newName };
     const oldSteps = [...steps];
     return this.withOptimisticUpdate({
-      optimisticUpdate: () => this.stepsStream.next(
-        steps.map(step => step.initialIndex === updatedStep.initialIndex ? updatedStep : step)
-      ),
-      rollback: () => this.stepsStream.next(oldSteps),
+      optimisticUpdate: () => {
+        this.stepsStream.next(
+          steps.map(step => step.initialIndex === updatedStep.initialIndex ? updatedStep : step)
+        );
+      },
+      rollback: () => { this.stepsStream.next(oldSteps); },
       action: () => this.workflowApi.changeStepName({
         stepInitialIndex: updatedStep.initialIndex,
         stepName: updatedStep.name,
       }),
-      realUpdate: (realValue) => this.stepsStream.next(realValue.steps),
+      realUpdate: (realValue) => { this.stepsStream.next(realValue.steps); },
     });
   }
 
@@ -152,15 +154,17 @@ export class WorkflowStore {
     // Оптимистичное обновление состояния.
     const oldSteps = [...steps];
     return this.withOptimisticUpdate({
-      optimisticUpdate: () => this.stepsStream.next(
-        steps.filter(step => step.initialIndex !== index)
-      ),
-      rollback: () => this.stepsStream.next(oldSteps),
+      optimisticUpdate: () => {
+        this.stepsStream.next(
+          steps.filter(step => step.initialIndex !== index)
+        );
+      },
+      rollback: () => { this.stepsStream.next(oldSteps); },
       action: () => this.workflowApi.deleteStep({
         wfName: workflowName,
         stepInitialIndex: index,
       }),
-      realUpdate: (realValue) => this.stepsStream.next(realValue.steps),
+      realUpdate: (realValue) => { this.stepsStream.next(realValue.steps); },
     });
   }
 
@@ -209,7 +213,11 @@ export class WorkflowStore {
 
 }
 
-// Экземпляр стора
+/** 
+ * Общее состояние и методы для работы с рабочими процессами
+ *  
+ * Используется для синхронизации состояния workflow в разных микро-фронтендах
+ */
 export const workflowStore = new WorkflowStore(
   workflowApiService,
 );

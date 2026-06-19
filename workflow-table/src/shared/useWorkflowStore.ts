@@ -25,6 +25,7 @@ export const useWorkflowStore = defineStore<'workflow', AppWorkflowStore>('workf
   const changeStepName = workflowStore.changeStepName.bind(workflowStore);
   const removeStep = workflowStore.removeStep.bind(workflowStore);
 
+  // Синхронизируем с общим стором (можно сделать в onMount главного компонента App.vue, но для явности всё расположено в объявлении стора)
   /** Подписки на изменения в общем workflow store */
   const subscriptions: Subscription[] = [];
   if (!subscriptions.length) {
@@ -32,7 +33,7 @@ export const useWorkflowStore = defineStore<'workflow', AppWorkflowStore>('workf
     subscriptions.push(workflowStore.name.subscribe(val => name.value = val));
   }
 
-  /** Функция для очистки подписок */
+  /** Функция для очистки подписок (можно сделать в onOnmount главного компонента App.vue) */
   const destroy = () => {
     subscriptions.forEach(subscription => { subscription.unsubscribe(); });
   };
