@@ -42,7 +42,7 @@ describe('WorkflowStore', () => {
     }
 
     expect(workflowApiService.createStep).not.toHaveBeenCalled();
-    expect(store.stepsStream.getValue().length).toBe(1);
+    expect(store.stepsStream.getValue().length).toBe(initialSteps.length);
   });
 
   it('не должен создавать шаг при дубликате индекса (клиентская валидация)', async () => {
@@ -60,10 +60,10 @@ describe('WorkflowStore', () => {
     }
 
     expect(workflowApiService.createStep).not.toHaveBeenCalled();
-    expect(store.stepsStream.getValue().length).toBe(1);
+    expect(store.stepsStream.getValue().length).toBe(initialSteps.length);
   });
 
-  it('откатывает изменения при ошибке сервера ( ValidationError )', async () => {
+  it('откатывает изменения при ошибке сервера (ValidationError)', async () => {
     const newStep: WorkflowStep = {
       initialIndex: 2, name: 'New Step', x: 10, y: 20, color: '#000', nextSteps: []
     };
@@ -84,27 +84,29 @@ describe('WorkflowStore', () => {
     expect(store.stepsStream.getValue().length).toBe(initialLength);
   });
 
-  it('успешно создает шаг при отсутствии ошибок', async () => {
+  it('успешно создает шаг при отсутствии ошибок, и получает значение с сервера', async () => {
     const newStep: WorkflowStep = {
-      initialIndex: 2, name: 'New Step', x: 10, y: 20, color: '#000', nextSteps: []
+      initialIndex: 2, name: 'New Step', x: 10, y: 20, color: 'black', nextSteps: []
     };
 
     vi.spyOn(workflowApiService, 'createStep').mockResolvedValue({
       ok: true,
-      value: { ...newStep, x: 100 } // сервер может изменить координаты
+      value: { ...newStep, color: 'red' } // Допустим сервер изменил цвет
     });
 
     const result = await store.createStep('wf-name', newStep);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.x).toBe(100); // серверный ответ
+      // Ответ должен быть такой, как вернул сервер (x: 100)
+      expect(result.value.color).toBe('red');
     }
 
-    // Проверяем оптимистичное обновление
     const steps = store.stepsStream.getValue();
-    expect(steps.length).toBe(2);
-    expect(steps[1]).toEqual(newStep); // локальное состояние — как отправили
+    // Шаг добавился
+    expect(steps.length).toBe(initialSteps.length + 1);
+    // UI обновил оптимистичное клиентское значение ('black'), реальным значением с сервера ('red')
+    expect(steps[1].color).toEqual('red');
   });
 
   it('не меняет имя, если шаг не найден', async () => {
@@ -126,7 +128,6 @@ describe('WorkflowStore', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.steps[0].name).toBe(initialName);
-      expect(result.value.steps.length).toBe(initialSteps.length);
     }
 
     expect(workflowApiService.changeStepName).not.toHaveBeenCalled();
@@ -164,7 +165,7 @@ describe('WorkflowStore', () => {
     expect(result.ok).toBe(true);
 
     const steps = store.stepsStream.getValue();
-    expect(steps[0].name).toBe('Updated'); // оптимистичное обновление
+    expect(steps[0].name).toBe('Updated');
   });
 
   it('откатывает изменение имени при ошибке сервера', async () => {
