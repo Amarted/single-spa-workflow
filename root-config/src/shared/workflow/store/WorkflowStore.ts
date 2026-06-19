@@ -5,6 +5,9 @@ import { ValidationError } from '../../errors/ValidationError';
 import type { Workflow } from '../interfaces/Workflow';
 import type { Result } from '../../Result';
 
+/** Данные для создания без index. Он генерируется автоматически */
+type WorkflowStepCreationData = Omit<WorkflowStep, 'initialIndex'>;
+
 /**
  * Сервис для управления состоянием рабочего процесса
  * 
@@ -40,29 +43,24 @@ export class WorkflowStore {
   /**
   * Создание нового шага
   * @param workflowName Имя рабочего процесса, в котором создаётся новый шаг
-  * @param newStep Новый шаг
+  * @param newStepData Новый шаг
   * @returns Результат с обновлённым процессом или ошибкой валидации
   */
-  public async createStep(workflowName: string, newStep: WorkflowStep): Promise<Result<WorkflowStep, ValidationError>> {
+  public async createStep(workflowName: string, newStepData: WorkflowStepCreationData): Promise<Result<WorkflowStep, ValidationError>> {
     const steps = this.stepsStream.getValue();
 
     // Имя должно быть уникально
-    const nameIsNotUnique = steps.some(step => step.name === newStep.name);
+    const nameIsNotUnique = steps.some(step => step.name === newStepData.name);
     if (nameIsNotUnique) {
       return {
         ok: false,
-        error: new ValidationError(`Шаг с названием ${newStep.name} уже существует`),
-      };
-    }
-    // Индес должен быть уникальным в пределах процесса
-    const indexIsNotUnique = steps.some(step => step.initialIndex === newStep.initialIndex);
-    if (indexIsNotUnique) {
-      return {
-        ok: false,
-        error: new ValidationError(`Шаг с индексом ${newStep.initialIndex} уже существует`),
+        error: new ValidationError(`Шаг с названием ${newStepData.name} уже существует`),
       };
     }
 
+    // Индекс должен быть уникальным в пределах процесса. Берём максимальное значение и увеличиваем его
+    const newIndex = Math.max(...steps.map(step => step.initialIndex)) + 1;
+    const newStep: WorkflowStep = { ...newStepData, initialIndex: newIndex };
     // Оптимистичное обновление состояния. Сохраняем старое, для отката в случае ошибки синхронизации с сервером
     const oldSteps = [...steps];
     return this.withOptimisticUpdate({
@@ -70,11 +68,11 @@ export class WorkflowStore {
       rollback: () => this.stepsStream.next(oldSteps),
       action: () => this.workflowApi.createStep({
         wfName: workflowName,
-        stepName: newStep.name,
-        x: newStep.x,
-        y: newStep.y,
-        color: newStep.color,
-        nextSteps: newStep.nextSteps,
+        stepName: newStepData.name,
+        x: newStepData.x,
+        y: newStepData.y,
+        color: newStepData.color,
+        nextSteps: newStepData.nextSteps,
       }),
       realUpdate: (realValue) => this.stepsStream.next([...oldSteps, realValue]),
     });

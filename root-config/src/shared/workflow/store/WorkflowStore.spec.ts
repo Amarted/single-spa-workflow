@@ -47,24 +47,6 @@ describe('WorkflowStore', () => {
       expect(store.stepsStream.getValue().length).toBe(initialSteps.length);
     });
 
-    it('не должен создавать шаг при дубликате индекса (клиентская валидация)', async () => {
-      const duplicateIndexStep: WorkflowStep = {
-        ...initialSteps[0],
-        name: 'New Step 1',
-      };
-
-      const result = await store.createStep('wf-name', duplicateIndexStep);
-
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.message).toContain('уже существует');
-      }
-
-      expect(workflowApiService.createStep).not.toHaveBeenCalled();
-      expect(store.stepsStream.getValue().length).toBe(initialSteps.length);
-    });
-
     it('откатывает изменения при ошибке сервера (ValidationError)', async () => {
       const newStep: WorkflowStep = {
         initialIndex: 2, name: 'New Step', x: 10, y: 20, color: '#000', nextSteps: []
