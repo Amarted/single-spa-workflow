@@ -1,19 +1,29 @@
 /**
- * Общие стили и переменные для таблиц
+ * Общие стили для таблиц
  */
-:root {
-  --table-head-bg: var(--bg-secondary);
-  --table-head-text: var(--text-secondary);
-  --table-row-border: var(--border-color);
-}
 
 table {
   border-collapse: collapse;
 
+  tr {
+    border-bottom: 1px solid var(--border-color);
+  }
+
   th {
-    background: var(--table-head-bg);
-    color: var(--table-head-text);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
     font-weight: 400;
     text-align: left;
+  }
+
+  th,
+  td {
+    padding: 12px 15px;
+  }
+
+  tbody tr.empty-data {
+    text-align: center;
+    font-style: italic;
+    color: var(--gray-500);
   }
 }

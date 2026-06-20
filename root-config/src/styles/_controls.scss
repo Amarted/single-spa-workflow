@@ -2,8 +2,33 @@
  * Стили и переменные для кнопок, инпутов и других контролов
  */
 :root {
-  // Кнопки
-  --button-bg: var(--bg-secondary);
+  --button-bg: var(--gray-300);
   --button-text: var(--text-secondary);
-  --button-border: transparent;
+  --button-radius: var(--radius);
+  --button-bg-hover: var(--gray-400);
+  --button-text-hover: var(--text-primary);
+  --button-outline: #1400ff2b;
+}
+
+button {
+  display: flex;
+  gap: 10px;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: transparent;
+  padding: 8px 10px;
+  border-radius: var(--button-radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--button-bg-hover);
+    color: var(--button-text-hover);
+  }
+
+  &:focus {
+    outline: 2px solid var(--button-outline);
+  }
 }

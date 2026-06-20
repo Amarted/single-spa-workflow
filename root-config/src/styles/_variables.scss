@@ -2,14 +2,22 @@
  * Общие переменные с палитрой и стилями элементов приложения
  */
 :root {
+  // Палитра
+  --gray-100: #f9f9f9;
+  --gray-200: #f2f2f2;
+  --gray-300: #ececec;
+  --gray-400: #dbdbdb;
+  --gray-500: #c4c4c4;
+
   // Основные цвета
   --brand-primary: #aa8800;
   --brand-primary-light: #ddb100;
-  --bg-primary: #f9f9f9;
-  --bg-secondary: #f2f2f2;
+  --brand-primary-dark: #886600;
+  --bg-primary: var(--gray-100);
+  --bg-secondary: var(--gray-200);
   --text-primary: #2f2f2f;
   --text-secondary: #676767;
-  --border-color: #dbdbdb;
+  --border-color: var(--gray-400);
   --color-success: #2ecc71;
   --color-success-dark: #27ae60;
   --color-error: #e74c3c;
@@ -20,8 +28,7 @@
   --color-info-dark: #2980b9;
 
   // Общие значения
-  --radius: 8px;
-  --radius-modal: 12px;
+  --radius: 5px;
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.2);
   --font: 'Open Sans', sans-serif;
