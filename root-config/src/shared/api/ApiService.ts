@@ -37,7 +37,7 @@ export abstract class ApiService {
       // Успешный flow - возвращаем данные
       return {
         ok: true,
-        value: await response.json(),
+        value: await response.json() as ResponseData,
       };
     } else {
       // Какая-то ошибка, пытаемся понять - ошибка валидации (как части операции), или что-то ещё
@@ -47,6 +47,7 @@ export abstract class ApiService {
       try {
         // Пробуем получить JSON с информацией об ошибке, если она была передана сервером
         errorBody = await response.json() as ApiErrorResponse;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         // Если ответ не JSON — игнорируем
       }
@@ -59,11 +60,12 @@ export abstract class ApiService {
         return {
           ok: false,
           error,
-        }
+        };
       } else {
         // Что-то ещё пошло не так - выкидываем ошибку API
         // Если сервер не передавал ошибку — используем текст статуса или дефолтное сообщение
         throw new ApiError(
+          // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
           errorBody?.error || response.statusText || 'Неизвестная ошибка',
           response.status,
         );
