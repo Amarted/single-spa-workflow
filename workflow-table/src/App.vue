@@ -1,7 +1,7 @@
 <script setup lang="ts">
-
+import WorkflowTable from './components/WorkflowTable.vue';
 </script>
 
 <template>
-  <div>TTable</div>
+  <WorkflowTable></WorkflowTable>
 </template>
