@@ -1,5 +1,5 @@
 export type MessageType = 'success' | 'error' | 'warning' | 'info';
-
+type Duration = number | 'always';
 /**
  * Модальное окно с кнопками подтверждения и отмены, для внутреннего использования
  */
@@ -19,8 +19,9 @@ export class MessageService {
    * @param type Тип сообщения
    * @param duration Продолжительность показа в мс
    */
-  public showToast(message: string, type: MessageType = 'info', duration = 3000): void {
+  public showToast(message: string, type: MessageType = 'info', duration: Duration = 5000): void {
     const toastElement = this.createNotificationToast(message, type);
+
     this.mountNotificationToast(toastElement, duration);
   }
 
@@ -42,6 +43,7 @@ export class MessageService {
 
       document.body.appendChild(modal.overlay);
       modal.overlay.classList.add('is-visible');
+      modal.cancelButton.focus();
 
       const globalEscapeHandler = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -70,7 +72,7 @@ export class MessageService {
     iconSpan.className = 'notification-icon';
     iconSpan.textContent = this.getIconForMessageType(type);
 
-    const textSpan = document.createTextNode(this.escapeHtml(message));
+    const textSpan = document.createTextNode(message);
 
     toast.appendChild(iconSpan);
     toast.appendChild(textSpan);
@@ -93,11 +95,11 @@ export class MessageService {
 
     const header = document.createElement('div');
     header.className = 'modal-dialog-header';
-    header.textContent = this.escapeHtml(title);
+    header.textContent = title;
 
     const body = document.createElement('div');
     body.className = 'modal-dialog-body';
-    body.textContent = this.escapeHtml(message);
+    body.textContent = message;
 
     const footer = document.createElement('div');
     footer.className = 'modal-dialog-footer';
@@ -130,15 +132,17 @@ export class MessageService {
   /** 
    * Смонтировать уведомление с сообщением.
    * @param toast Уведомление
-   * @param duration Время отображения уведомления в миллисекундах
+   * @param duration Время отображения уведомления в миллисекундах, или `always` если его не нужно убирать
    */
-  private mountNotificationToast(toast: HTMLElement, duration: number): void {
+  private mountNotificationToast(toast: HTMLElement, duration: Duration): void {
     document.body.appendChild(toast);
 
-    setTimeout(() => {
-      toast.classList.add('is-hiding');
-      setTimeout(() => { toast.remove(); }, 300); // Ждем завершения CSS анимации
-    }, duration);
+    if (duration !== 'always') {
+      setTimeout(() => {
+        toast.classList.add('is-hiding');
+        setTimeout(() => { toast.remove(); }, 300); // Ждем завершения CSS анимации
+      }, duration);
+    }
   }
 
   /**
@@ -194,19 +198,6 @@ export class MessageService {
       case 'warning': return '⚠';
       default: return 'ℹ';
     }
-  }
-
-  private escapeHtml(text: string): string {
-    if (!text) {
-      return '';
-    }
-
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
   }
 }
 
