@@ -4,9 +4,12 @@
 import { createApp, h, type App } from 'vue';
 import singleSpaVue from "single-spa-vue";
 import AppComponent from './App.vue';
-import './style.scss';
 import { createPinia } from 'pinia';
-import { useWorkflowStore } from './shared/useWorkflowStore.ts';
+import { useWorkflowStore } from './store/useWorkflowStore.ts';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faFile, faTrashCan } from '@fortawesome/free-regular-svg-icons';
+/** Добавляем только нужные иконки */
+library.add(faFile, faTrashCan);
 
 const mountRoot = document.getElementById('workflow-table-root');
 
