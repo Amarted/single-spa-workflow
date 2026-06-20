@@ -188,10 +188,9 @@ export class MessageService {
   }
 
   private getIconForMessageType(type: MessageType): string {
-    /** @todo use font awesome */
     switch (type) {
       case 'success': return '✓';
-      case 'error': return '✕';
+      case 'error': return '⚠';
       case 'warning': return '⚠';
       default: return 'ℹ';
     }
