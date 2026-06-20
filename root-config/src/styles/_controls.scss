@@ -1,0 +1,9 @@
+/**
+ * Стили и переменные для кнопок, инпутов и других контролов
+ */
+:root {
+  // Кнопки
+  --button-bg: var(--bg-secondary);
+  --button-text: var(--text-secondary);
+  --button-border: transparent;
+}

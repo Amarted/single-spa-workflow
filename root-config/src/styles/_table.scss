@@ -1,0 +1,19 @@
+/**
+ * Общие стили и переменные для таблиц
+ */
+:root {
+  --table-head-bg: var(--bg-secondary);
+  --table-head-text: var(--text-secondary);
+  --table-row-border: var(--border-color);
+}
+
+table {
+  border-collapse: collapse;
+
+  th {
+    background: var(--table-head-bg);
+    color: var(--table-head-text);
+    font-weight: 400;
+    text-align: left;
+  }
+}

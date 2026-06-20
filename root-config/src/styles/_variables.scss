@@ -1,0 +1,28 @@
+/**
+ * Общие переменные с палитрой и стилями элементов приложения
+ */
+:root {
+  // Основные цвета
+  --brand-primary: #aa8800;
+  --brand-primary-light: #ddb100;
+  --bg-primary: #f9f9f9;
+  --bg-secondary: #f2f2f2;
+  --text-primary: #2f2f2f;
+  --text-secondary: #676767;
+  --border-color: #dbdbdb;
+  --color-success: #2ecc71;
+  --color-success-dark: #27ae60;
+  --color-error: #e74c3c;
+  --color-error-dark: #c0392b;
+  --color-warning: #f39c12;
+  --color-warning-dark: #d35400;
+  --color-info: #3498db;
+  --color-info-dark: #2980b9;
+
+  // Общие значения
+  --radius: 8px;
+  --radius-modal: 12px;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.2);
+  --font: 'Open Sans', sans-serif;
+}

@@ -1,7 +1,7 @@
 import { addErrorHandler, getAppStatus, LOAD_ERROR, registerApplication, start } from 'single-spa';
 import { workflowStore } from '@shared/workflow/store/WorkflowStore';
 import { messageService } from '@shared/MessageService';
-import './styles/root-style.scss';
+import './styles/styles.scss';
 import { workflowApiService } from './shared/workflow/api/WorkflowApiService';
 
 /** Данные микро-фронтенда */

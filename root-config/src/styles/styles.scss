@@ -1,0 +1,45 @@
+/**
+ * Корневой файл стилей, включает общие цвета, стили и переменные
+ *
+ * Используется для придания единого стиля разным частям приложения, включая микро-фронтенды
+ */
+@use 'variables';
+@use 'typography';
+@use 'table';
+@use 'controls';
+@use 'notifications';
+
+body {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  font: 15px/145% var(--font);
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+/* Корневой шаблон. Контейнер для микро-фронтендов */
+#root-layout {
+  display: grid;
+  grid-template-columns: min-content 1fr 1fr;
+  height: 100%;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+#app-sidebar {
+  width: 40px;
+  border-left: 1px solid var(--brand-primary-light);
+  background: var(--brand-primary);
+  color: white;
+  grid-row: span 2;
+}
+
+@media (max-width: 1200px) {
+  #root-layout {
+    grid-template-columns: min-content 1fr;
+  }
+}
