@@ -65,7 +65,7 @@ export class WorkflowApiService extends ApiService {
     if (data?.wfName) {
       url.searchParams.set('wfName', data.wfName);
     }
-
+    /** @todo Использовать axios или улучшить использование fetch (обработка случая недоступности сервера, обернуть вызов fetch в try/catch). Сейчас обрабатываются ошибки ответа сервера, если он доступен */
     const response = await fetch(url);
 
     return this.handleResponse<Workflow>(response);
