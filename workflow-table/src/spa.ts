@@ -7,9 +7,9 @@ import AppComponent from './App.vue';
 import { createPinia } from 'pinia';
 import { useWorkflowStore } from './store/useWorkflowStore.ts';
 import { library } from '@fortawesome/fontawesome-svg-core';
-import { faFile, faTrashCan } from '@fortawesome/free-regular-svg-icons';
+import { faFile, faTrashCan, faEdit } from '@fortawesome/free-regular-svg-icons';
 /** Добавляем только нужные иконки */
-library.add(faFile, faTrashCan);
+library.add(faFile, faTrashCan, faEdit);
 
 const mountRoot = document.getElementById('workflow-table-root');
 

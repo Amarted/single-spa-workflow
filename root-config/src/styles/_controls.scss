@@ -7,7 +7,7 @@
   --button-radius: var(--radius);
   --button-bg-hover: var(--gray-400);
   --button-text-hover: var(--text-primary);
-  --button-outline: #1400ff2b;
+  --focus-outline: #1400ff2b;
 }
 
 button {
@@ -29,6 +29,17 @@ button {
   }
 
   &:focus {
-    outline: 2px solid var(--button-outline);
+    outline: 2px solid var(--focus-outline);
+  }
+}
+
+input {
+  padding: 4px 10px;
+  font: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+
+  &:focus {
+    outline: 2px solid var(--focus-outline);
   }
 }
