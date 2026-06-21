@@ -16,15 +16,20 @@ type WorkflowStepCreationData = Omit<WorkflowStep, 'initialIndex'>;
  * - Использует оптимистичное обновление UI
  */
 export class WorkflowStore {
-  /** Имя процесса для изменения */
+  /** Имя процесса, изменяемое */
   private readonly nameStream = new BehaviorSubject<string>("");
-  /** Имя процесса для чтения (можем только подписаться на изменения, но не менять) */
+  /** Имя процесса */ // Только для чтения (можем только подписаться на изменения, но не менять)
   public readonly name = this.nameStream.asObservable();
 
-  /** Cписок шагов для изменения */
+  /** Изменяемый список шагов */
   public readonly stepsStream = new BehaviorSubject<WorkflowStep[]>([]);
-  /** Список шагов для чтения */
+  /** Список шагов */
   public readonly steps = this.stepsStream.asObservable();
+
+  /** Изменяемый выбранный шаг */
+  private readonly selectedStepStream = new BehaviorSubject<number | null>(null);
+  /** Выбранный шаг */
+  public readonly selectedStep = this.selectedStepStream.asObservable();
 
   public constructor(
     private readonly workflowApi: WorkflowApiService,
@@ -59,7 +64,10 @@ export class WorkflowStore {
     }
 
     // Индекс должен быть уникальным в пределах процесса. Берём максимальное значение и увеличиваем его
-    const newIndex = Math.max(...steps.map(step => step.initialIndex)) + 1;
+    const newIndex = steps.reduce(
+      (maxIndex, step) => Math.max(maxIndex, step.initialIndex),
+      0
+    ) + 1;
     const newStep: WorkflowStep = { ...newStepData, initialIndex: newIndex };
     // Оптимистичное обновление состояния. Сохраняем старое, для отката в случае ошибки синхронизации с сервером
     const oldSteps = [...steps];
@@ -173,6 +181,14 @@ export class WorkflowStore {
       }),
       realUpdate: (realValue) => { this.stepsStream.next(realValue.steps); },
     });
+  }
+
+  /**
+   * Выбор (выделение) шага 
+   * @param index Индекс выбранного/активного шага 
+   */
+  public selectStep(index: number | null): void {
+    this.selectedStepStream.next(index);
   }
 
   /** Уничтожение стора. Завершение потока для отмены подписок всех получателей */
