@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { icon } from '@fortawesome/fontawesome-svg-core';
-import { faFile, faTrashCan, faEdit } from '@fortawesome/free-regular-svg-icons';
+import { faFile, faTrashCan, faEdit, } from '@fortawesome/free-regular-svg-icons';
 import type { WorkflowStep } from '../../../root-config/src/shared/workflow/interfaces/WorkflowStep';
 import { useWorkflowStore } from '../store/useWorkflowStore';
 import { messageService } from '@shared/MessageService';
 import { storeToRefs } from 'pinia';
-import { nextTick, reactive, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import WorkflowNameStepNameEditor from './WorkflowStepNameEditor.vue';
 
 /** Данные редактора имени шага */
 interface EditNameData {
   show: boolean;
   stepIndex: number | null;
+  isNew: boolean;
 }
 
 const fileIcon = icon(faFile).html;
@@ -22,11 +23,34 @@ const isTableHighlighted = ref(false);
 const editNameForm = reactive<EditNameData>({
   show: false,
   stepIndex: null,
+  isNew: false,
 });
 
 const store = useWorkflowStore();
-const { name, steps } = storeToRefs(store);
-const { createStep, removeStep } = store;
+const { name, steps, selectedStep } = storeToRefs(store);
+const { createStep, removeStep, selectStep } = store;
+
+onMounted(() => {
+  document.addEventListener('keydown', handleDelteKeyOnSelectedStep);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleDelteKeyOnSelectedStep);
+});
+
+
+/**
+ * Удаление шага при нажатии Del на выделенном шаге
+ * @param event Событие нажатия 
+ */
+function handleDelteKeyOnSelectedStep(event: KeyboardEvent): void {
+  if (event.key === 'Delete' && selectedStep.value !== null) {
+    const stepToRemove = steps.value.find(s => s.initialIndex === selectedStep.value);
+    if (stepToRemove) {
+      void onRemoveStepClick(stepToRemove);
+    }
+  }
+};
 
 /** Генерирует уникальное имя для создания шага */
 function generateStepName(steps: WorkflowStep[]): string {
@@ -63,14 +87,20 @@ async function onCreateStepClick(): Promise<void> {
     });
 
     if (result.ok) {
-      messageService.showToast('Состояние создано и добавлено в конец таблицы', 'success');
+      messageService.showToast('Состояние создано', 'success');
+      // Фокусируем пользователя на результате, показываем созданную строку
       highlightTable();
-      scrollToTableLastRow();
+      void scrollToTableLastRow();
+      const newStep = result.value;
+      selectStep(newStep.initialIndex);
+      // Сразу открываем редактор, и выделяем имя полностью
+      editNameForm.isNew = true;
+      onChangeNameClick(newStep);
     } else {
       messageService.showToast(`Ошибка: ${result.error.message}. Создание состояния отменено`, 'error');
     }
   } catch (error) {
-    messageService.showToast('Что-то пошло не так. Создание состояния отменено', 'error');
+    messageService.showToast('Что-то не так. Создание состояния отменено', 'error');
     // Кидаем дальше, для обработки/логирования
     throw error;
   }
@@ -86,17 +116,40 @@ async function onRemoveStepClick(step: WorkflowStep): Promise<void> {
     return;
   }
 
+  // Находим индекс удаляемого шага в массиве, для дальнейшего выбора следующей/предыдущей строки, чтобы пользователь не терял фокус, на какой строке он был
+  const stepIndexInArray = steps.value.findIndex(existingStep => existingStep.initialIndex === step.initialIndex);
+
+  // Шаг должен быть всегда, что-то не так
+  if (stepIndexInArray === -1) {
+    messageService.showToast('Ошибка: шаг не найден в списке', 'error');
+    return;
+  }
+  // Определяем, какой шаг выбрать после удаления
+  let nextStepToSelect: WorkflowStep | null = null;
+  if (steps.value.length > 1) {
+    // Если это был последний — берем предыдущий, иначе — следующий
+    if (stepIndexInArray === steps.value.length - 1) {
+      nextStepToSelect = steps.value[stepIndexInArray - 1];
+    } else if (stepIndexInArray > 0) {
+      nextStepToSelect = steps.value[stepIndexInArray + 1]; // следующий
+    }
+  }
+
   try {
     const result = await removeStep(name.value, step.initialIndex);
 
     if (result.ok) {
       messageService.showToast('Состояние удалено', 'success');
       highlightTable();
+      // Выделяем следующий/предыдущий шаг
+      if (nextStepToSelect) {
+        selectStep(nextStepToSelect.initialIndex);
+      }
     } else {
       messageService.showToast(`Ошибка: ${result.error.message}. Удаление состояния отменено`, 'error');
     }
   } catch (error) {
-    messageService.showToast('Что-то пошло не так. Удаление состояния отменено', 'error');
+    messageService.showToast('Что-то не так. Удаление состояния отменено', 'error');
     // Кидаем дальше, для обработки/логирования
     throw error;
   }
@@ -117,6 +170,7 @@ function onNameChangeComplete(): void {
   // Сркыть форму
   editNameForm.stepIndex = null;
   editNameForm.show = false;
+  editNameForm.isNew = false;
 }
 
 
@@ -130,18 +184,16 @@ function highlightTable(): void {
   ;
 };
 
-function scrollToTableLastRow(): void {
-  nextTick(() => {
-    const tbody = tableBodyRef.value;
-    if (tbody) {
-      const rows = tbody.querySelectorAll('tr');
-      const lastRow = rows[rows.length - 1] as HTMLElement;
-      if (lastRow) {
-        lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+async function scrollToTableLastRow(): Promise<void> {
+  await nextTick();
+  const tbody = tableBodyRef.value;
+  if (tbody) {
+    const rows = tbody.querySelectorAll('tr');
+    const lastRow = rows[rows.length - 1] as HTMLElement;
+    if (lastRow) {
+      lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }); // убедиться, что DOM обновился
-
+  }
 }
 
 /** 
@@ -161,9 +213,16 @@ function getStepByIndex(index: number): WorkflowStep {
   const step = steps.value.find(step => step.initialIndex === index);
   if (!step) {
     // Все шаги должны существовать, что-то не так.
-    const errorMessage = `Шаг с индексом ${index} не найден`;
-    messageService.showToast(errorMessage, 'error');
-    throw new Error(errorMessage);
+    console.warn(`Шаг с индексом ${index} не найден`);
+    // Возвращаем заглушку. Альтернативно можем вернуть null, и не отображать вовсе, но тогда просто скроем проблему
+    // Такое сейчас может быть при удалении шага, т.к. на сервере удалённый шаг, не удаляется из других nextSteps, ссылающихся на него
+    return {
+      initialIndex: index,
+      name: `{Шаг №${index} удалён}`,
+      x: 0,
+      y: 0,
+      nextSteps: [],
+    }
   }
 
   return step;
@@ -202,8 +261,9 @@ function getStepByIndex(index: number): WorkflowStep {
               <tr
                 v-for="step in store.steps"
                 :key="step.initialIndex"
+                :class="{ 'selected-step': step.initialIndex === selectedStep }"
+                @click="selectStep(step.initialIndex)"
               >
-                <!-- @todo Разбить на более мелкие компоненты -->
                 <td class="name-property">
                   <div
                     v-if="!editNameForm.show || editNameForm.stepIndex !== step.initialIndex"
@@ -224,23 +284,14 @@ function getStepByIndex(index: number): WorkflowStep {
                       {{ step.name }}
                     </span>
                   </div>
+
                   <WorkflowNameStepNameEditor
                     v-if="editNameForm.show && editNameForm.stepIndex === step.initialIndex"
                     :step="step"
+                    :is-new="editNameForm.isNew"
                     @submit="onNameChangeComplete()"
                     @cancel="onNameChangeComplete()"
                   ></WorkflowNameStepNameEditor>
-                  <!-- <form @submit="onChangeNameSubmit(step)">
-                    <input
-                      type="text"
-                      v-model="editNameForm.name"
-                    />
-                    <button type="submit">
-                      <svg class="icon-check">
-                        <use xlink:href="#icon-check"></use>
-                      </svg>
-                    </button>
-                  </form> -->
                 </td>
                 <td class="coordinate-property">{{ step.x }}</td>
                 <td class="coordinate-property">{{ step.y }}</td>
@@ -288,31 +339,6 @@ function getStepByIndex(index: number): WorkflowStep {
     <template v-else>
       <h3>Рабочий процесс загружается...</h3>
     </template>
-
-    <svg display="none">
-      <defs>
-        <symbol
-          id="icon-plus"
-          viewBox="0 0 448 512"
-        >
-          <!-- В установленом пакете @fontawesome free только плюс с контуром, используем svg для иконки без контура-->
-          <!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc. -->
-          <path
-            d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z"
-          />
-        </symbol>
-        <symbol
-          id="icon-check"
-          viewBox="0 0 448 512"
-        >
-          <!-- Аналогично только check с контуром, используем svg без контура-->
-          <!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc. -->
-          <path
-            d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"
-          />
-        </symbol>
-      </defs>
-    </svg>
   </div>
 </template>
 
@@ -391,7 +417,13 @@ function getStepByIndex(index: number): WorkflowStep {
       }
     }
 
+    .selected-step {
+      background-color: var(--gray-350);
+    }
+
     tbody tr {
+      cursor: pointer;
+
       .name-property {
         position: relative;
 
@@ -417,6 +449,8 @@ function getStepByIndex(index: number): WorkflowStep {
       }
 
       &:hover {
+        background-color: var(--gray-200);
+
         .edit-name-icon {
           display: inline;
         }

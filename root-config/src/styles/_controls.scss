@@ -42,4 +42,8 @@ input {
   &:focus {
     outline: 2px solid var(--focus-outline);
   }
+
+  &.input-error {
+    border-color: var(--color-error);
+  }
 }
