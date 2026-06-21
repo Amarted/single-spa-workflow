@@ -115,6 +115,13 @@ export class WorkflowStore {
         },
       };
     }
+    // Имя н едолжно пыть пустым
+    if (newName.length === 0) {
+      return {
+        ok: false,
+        error: new ValidationError('Имя не должно быть пустым'),
+      };
+    }
 
     // Оптимистичное обновление состояния.
     const updatedStep = { ...existingStep, name: newName };

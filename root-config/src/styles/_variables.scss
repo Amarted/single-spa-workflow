@@ -18,8 +18,8 @@
   --text-primary: #2f2f2f;
   --text-secondary: #676767;
   --border-color: var(--gray-400);
-  --color-success: #2ecc71;
-  --color-success-dark: #27ae60;
+  --color-success: #26b963;
+  --color-success-dark: #208e4e;
   --color-error: #e74c3c;
   --color-error-dark: #c0392b;
   --color-warning: #f39c12;
@@ -30,6 +30,6 @@
   // Общие значения
   --radius: 5px;
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 10px 10px rgba(0, 0, 0, 0.1);
   --font: 'Open Sans', sans-serif;
 }

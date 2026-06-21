@@ -13,13 +13,14 @@ interface ModalWindow {
 }
 
 export class MessageService {
+  private toastContainerId = 'wf-toast-container';
   /**
    * Показать тост с сообщением.
    * @param message Текст сообщения
    * @param type Тип сообщения
    * @param duration Продолжительность показа в мс
    */
-  public showToast(message: string, type: MessageType = 'info', duration: Duration = 5000): void {
+  public showToast(message: string, type: MessageType = 'info', duration: Duration = 8000): void {
     const toastElement = this.createNotificationToast(message, type);
 
     this.mountNotificationToast(toastElement, duration);
@@ -81,6 +82,21 @@ export class MessageService {
   }
 
   /**
+ * Создать или получить глобальный контейнер для тостов
+ */
+  private getToastContainer(): HTMLElement {
+    let container = document.getElementById(this.toastContainerId);
+
+    if (!container) {
+      container = document.createElement('div');
+      container.id = this.toastContainerId;
+      document.body.appendChild(container);
+    }
+
+    return container;
+  }
+
+  /**
    * Создать модальное окно (его структуру) для подтверждения действия пользователем.
    * @param title Заголовок окна
    * @param message Текст сообщения 
@@ -135,12 +151,21 @@ export class MessageService {
    * @param duration Время отображения уведомления в миллисекундах, или `always` если его не нужно убирать
    */
   private mountNotificationToast(toast: HTMLElement, duration: Duration): void {
-    document.body.appendChild(toast);
+
+    const container = this.getToastContainer();
+    // Всегда добавляем в начало, чтобы новые тосты были сверху
+    container.prepend(toast);
 
     if (duration !== 'always') {
       setTimeout(() => {
         toast.classList.add('is-hiding');
-        setTimeout(() => { toast.remove(); }, 300); // Ждем завершения CSS анимации
+        setTimeout(() => {
+          toast.remove();
+          // Очистить контейнер, если он пуст(удалить его)
+          if (container.children.length === 0) {
+            container.remove();
+          }
+        }, 300); // Ждем завершения CSS анимации
       }, duration);
     }
   }
