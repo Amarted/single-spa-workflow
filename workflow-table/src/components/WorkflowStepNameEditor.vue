@@ -1,0 +1,106 @@
+<script setup lang="ts">
+import { ref, onMounted, } from 'vue';
+import type { WorkflowStep } from '@shared/workflow/interfaces/WorkflowStep';
+import { useWorkflowStore } from '../store/useWorkflowStore';
+import { messageService } from '../../../root-config/src/shared/MessageService';
+
+const props = defineProps<{
+  step: WorkflowStep;
+}>();
+
+const emit = defineEmits<{
+  (e: 'submit'): void;
+  (e: 'cancel'): void;
+}>();
+
+const stepName = ref(props.step.name);
+const errorMessage = ref<string | null>(null);
+const inputRef = ref<HTMLInputElement | null>(null);
+
+const { changeStepName } = useWorkflowStore();
+
+// Фокус на поле
+onMounted(() => {
+  inputRef.value?.focus();
+});
+
+async function onSubmit(): Promise<void> {
+  try {
+    const newName = stepName.value.trim();
+    if (newName === props.step.name) {
+      emit('submit');
+      return;
+    }
+
+    // Валидация происходит в сторе, просто проверяем на наличие ошибок валидации
+    const result = await changeStepName(props.step.initialIndex, newName);
+    if (result.ok) {
+      messageService.showToast('Имя шага изменено', 'success');
+      emit('submit');
+    } else {
+      errorMessage.value = result.error.message;
+    }
+  } catch (error) {
+    messageService.showToast('Что-то пошло не так. Изменение имени шага отменено', 'error');
+    emit('cancel');
+  }
+
+};
+
+function onCancel(): void {
+  emit('cancel');
+};
+</script>
+
+<template>
+  <form
+    @submit.prevent="onSubmit()"
+    class="name-editor"
+  >
+    <div class="input-wrpper">
+      <input
+        type="text"
+        v-model="stepName"
+        @keyup.esc="onCancel()"
+        ref="inputRef"
+      />
+      <button type="submit">
+        <svg class="icon-check">
+          <use xlink:href="#icon-check"></use>
+        </svg>
+      </button>
+    </div>
+    <div
+      class="error-message"
+      v-if="errorMessage"
+    >
+      {{ errorMessage }}
+    </div>
+  </form>
+
+</template>
+
+<style scoped lang="scss">
+form.name-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .input-wrapper {
+    display: flex;
+    gap: 8px;
+  }
+
+  .icon-check {
+    margin-top: 2px;
+    width: 12px;
+    height: 12px;
+    fill: var(--text-secondary);
+  }
+
+  .error-message {
+    color: var(--color-error);
+    font-size: 0.8rem;
+  }
+}
+</style>
