@@ -112,76 +112,83 @@ function getStepByIndex(index: number): WorkflowStep {
 
 <template>
   <div id="workflowTableComponentRoot">
-    <div class="header">
-      <h3>Структура рабочего процесса "{{ store.name }}"</h3>
-      <button @click="onCreateStepClick()">
-        <svg class="icon-plus">
-          <use xlink:href="#icon-plus"></use>
-        </svg>
-        Создать состояние</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th class="name-property">Состояние</th>
-          <th class="coordinate-property">x</th>
-          <th class="coordinate-property">y</th>
-          <th class="next-steps-property">Переходы</th>
-          <th class="controls"><!-- Controls --></th>
-        </tr>
-      </thead>
-      <tbody>
-        <template v-if="store.steps.length > 0">
-          <tr
-            v-for="step in store.steps"
-            :key="step.initialIndex"
-          >
-            <td class="name-property">
-              <span
-                class="icon"
-                v-html="fileIcon"
-                :style="{ color: step.color }"
-              ></span>
-              {{ step.name }}
-            </td>
-            <td class="coordinate-property">{{ step.x }}</td>
-            <td class="coordinate-property">{{ step.y }}</td>
-            <td class="next-steps-property">
-              <template
-                v-for="(nextStep, index) in getNextSteps(step.nextSteps)"
-              >
-                <span class="next-step">
-                  <span
-                    class="icon"
-                    v-html="fileIcon"
-                    :style="{ color: nextStep.color }"
-                  ></span>
-                  {{ nextStep.name }}
-                </span>
-                <!-- Запятая, если не последний -->
-                <template v-if="index !== step.nextSteps.length - 1">,
+    <!-- @todo Заменить на лоадер, с проверкой загрузки workflow -->
+    <template v-if="store.name">
+      <div class="header">
+        <h3>Структура рабочего процесса "{{ store.name }}"</h3>
+        <button @click="onCreateStepClick()">
+          <svg class="icon-plus">
+            <use xlink:href="#icon-plus"></use>
+          </svg>
+          Создать состояние</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="name-property">Состояние</th>
+            <th class="coordinate-property">x</th>
+            <th class="coordinate-property">y</th>
+            <th class="next-steps-property">Переходы</th>
+            <th class="controls"><!-- Controls --></th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-if="store.steps.length > 0">
+            <tr
+              v-for="step in store.steps"
+              :key="step.initialIndex"
+            >
+              <td class="name-property">
+                <span
+                  class="icon"
+                  v-html="fileIcon"
+                  :style="{ color: step.color }"
+                ></span>
+                {{ step.name }}
+              </td>
+              <td class="coordinate-property">{{ step.x }}</td>
+              <td class="coordinate-property">{{ step.y }}</td>
+              <td class="next-steps-property">
+                <template
+                  v-for="(nextStep, index) in getNextSteps(step.nextSteps)"
+                >
+                  <span class="next-step">
+                    <span
+                      class="icon"
+                      v-html="fileIcon"
+                      :style="{ color: nextStep.color }"
+                    ></span>
+                    {{ nextStep.name }}
+                  </span>
+                  <!-- Запятая, если не последний -->
+                  <template v-if="index !== step.nextSteps.length - 1">,
+                  </template>
                 </template>
-              </template>
-            </td>
-            <td class="controls">
-              <div class="controls-wrapper">
-                <button @click="onRemoveStepClick(step)">
-                  <span
-                    class="icon"
-                    v-html="trashIcon"
-                  ></span>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </template>
-        <template v-else>
-          <tr class="empty-data">
-            <td colspan="5">Список состояний пуст</td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
+              </td>
+              <td class="controls">
+                <div class="controls-wrapper">
+                  <button @click="onRemoveStepClick(step)">
+                    <span
+                      class="icon"
+                      v-html="trashIcon"
+                    ></span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </template>
+          <template v-else>
+            <tr class="empty-data">
+              <td colspan="5">Список состояний пуст</td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+
+    </template>
+    <template v-else>
+      <h3>Рабочий процесс загружается...</h3>
+    </template>
 
     <svg display="none">
       <defs>
