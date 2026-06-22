@@ -73,10 +73,24 @@ export class MessageService {
     iconSpan.className = 'notification-icon';
     iconSpan.textContent = this.getIconForMessageType(type);
 
-    const textSpan = document.createTextNode(message);
+    const textSpan = document.createElement('span');
+    textSpan.className = 'notification-text';
+    textSpan.textContent = message;
+
+    // Кнопка закрытия (крестик)
+    const closeButton = document.createElement('button');
+    closeButton.className = 'notification-close';
+    closeButton.type = 'button';
+    closeButton.setAttribute('aria-label', 'Закрыть уведомление');
+    closeButton.innerHTML = '&times;';
+    closeButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.dismissToast(toast);
+    });
 
     toast.appendChild(iconSpan);
     toast.appendChild(textSpan);
+    toast.appendChild(closeButton);
 
     return toast;
   }
@@ -145,7 +159,7 @@ export class MessageService {
     };
   }
 
-  /** 
+  /**
    * Смонтировать уведомление с сообщением.
    * @param toast Уведомление
    * @param duration Время отображения уведомления в миллисекундах, или `always` если его не нужно убирать
@@ -153,21 +167,35 @@ export class MessageService {
   private mountNotificationToast(toast: HTMLElement, duration: Duration): void {
 
     const container = this.getToastContainer();
-    // Всегда добавляем в начало, чтобы новые тосты были сверху
+    // Добавляем в начало, чтобы новые тосты были сверху
     container.prepend(toast);
 
     if (duration !== 'always') {
       setTimeout(() => {
-        toast.classList.add('is-hiding');
-        setTimeout(() => {
-          toast.remove();
-          // Очистить контейнер, если он пуст(удалить его)
-          if (container.children.length === 0) {
-            container.remove();
-          }
-        }, 300); // Ждем завершения CSS анимации
+        this.dismissToast(toast);
       }, duration);
     }
+  }
+
+  /**
+   * Скрыть и удалить уведомление с анимацией.
+   * @param toast Уведомление
+   */
+  private dismissToast(toast: HTMLElement): void {
+    // Если уже скрывается — не повторяем
+    if (toast.classList.contains('is-hiding')) {
+      return;
+    }
+
+    toast.classList.add('is-hiding');
+    setTimeout(() => {
+      toast.remove();
+      // Очистить контейнер, если он пуст (удалить его)
+      const container = document.getElementById(this.toastContainerId);
+      if (container?.children.length === 0) {
+        container.remove();
+      }
+    }, 300); // Ждем завершения CSS анимации
   }
 
   /**
