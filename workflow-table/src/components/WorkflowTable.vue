@@ -236,8 +236,14 @@ function getStepByIndex(index: number): WorkflowStep {
     <template v-if="name">
       <div class="header">
         <h3>Структура рабочего процесса "{{ name }}"</h3>
-        <button @click="onCreateStepClick()">
-          <svg class="icon-plus">
+        <button
+          @click="onCreateStepClick()"
+          aria-label="Создать новое состояние"
+        >
+          <svg
+            class="icon-plus"
+            aria-hidden="true"
+          >
             <use xlink:href="#icon-plus"></use>
           </svg>
           Создать состояние</button>
@@ -316,10 +322,14 @@ function getStepByIndex(index: number): WorkflowStep {
                 </td>
                 <td class="controls">
                   <div class="controls-wrapper">
-                    <button @click="onRemoveStepClick(step)">
+                    <button
+                      @click="onRemoveStepClick(step)"
+                      :aria-label="`Удалить состояние «${step.name}»`"
+                    >
                       <span
                         class="icon"
                         v-html="trashIcon"
+                        aria-hidden="true"
                       ></span>
                     </button>
                   </div>

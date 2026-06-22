@@ -1,5 +1,8 @@
 <template>
-  <svg display="none">
+  <svg
+    class="hidden"
+    aria-hidden="true"
+  >
     <defs>
       <symbol
         id="icon-plus"

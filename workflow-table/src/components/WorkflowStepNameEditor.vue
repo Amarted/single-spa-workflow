@@ -78,6 +78,7 @@ function onCancel(): void {
     @submit.prevent="onSubmit()"
     @reset.prevent="onCancel()"
     class="name-editor"
+    aria-label="Редактирование имени состояния"
   >
     <div class="input-wrapper">
       <input
@@ -86,14 +87,29 @@ function onCancel(): void {
         @keyup.esc="onCancel()"
         ref="inputRef"
         :class="{ 'input-error': errorMessage }"
+        :aria-label="`Изменить имя состояния «${step.name}»`"
+        :aria-invalid="!!errorMessage"
+        :aria-describedby="errorMessage ? 'name-editor-error' : undefined"
       />
-      <button type="submit">
-        <svg class="icon icon-check">
+      <button
+        type="submit"
+        aria-label="Сохранить имя"
+      >
+        <svg
+          class="icon icon-check"
+          aria-hidden="true"
+        >
           <use xlink:href="#icon-check"></use>
         </svg>
       </button>
-      <button type="reset">
-        <svg class="icon icon-cancel">
+      <button
+        type="reset"
+        aria-label="Отменить редактирование"
+      >
+        <svg
+          class="icon icon-cancel"
+          aria-hidden="true"
+        >
           <use xlink:href="#icon-cancel"></use>
         </svg>
       </button>
@@ -101,6 +117,8 @@ function onCancel(): void {
     <div
       class="error-message"
       v-if="errorMessage"
+      id="name-editor-error"
+      role="alert"
     >
       {{ errorMessage }}
     </div>
