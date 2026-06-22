@@ -1,102 +1,35 @@
-
-import { useDispatch, useSelector } from 'react-redux';
 import type { WorkflowStep } from '@shared/workflow/interfaces/WorkflowStep';
-import { selectName, selectSelectedStep, selectSteps, setSelectedStep } from '../store/workflowSlice';
+import { useMemo, } from 'react';
+import { useWorkflowStore } from '../store/useWorkflowStore';
 
 interface DiagramWorflowStep extends WorkflowStep {
   width: number;
   height: number;
 }
-function randomSize(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+
+const fontSize = 20;
+const resizeMarkerSize = 8; // Размер маркера ресайза (квадрат)
+const selectedBorderGap = 6; // Отступ рамки выделения от самого блока
+
 export function WorkflowDiagram() {
+  const { steps, selectedStep, selectStep } = useWorkflowStore();
 
-  // const steps = useSelector(selectSteps);
-  const steps: DiagramWorflowStep[] = [
-    {
-      initialIndex: 0,
-      name: 'Step 0',
-      nextSteps: [1],
-      x: 0,
-      y: 0,
-      color: 'red',
-      height: randomSize(50, 100),
-      width: randomSize(100, 200),
-    },
-    {
-      initialIndex: 1,
-      name: 'Step 1',
-      nextSteps: [2],
-      x: 300,
-      y: 0,
-      color: 'red',
-      height: randomSize(50, 100),
-      width: randomSize(100, 200),
-    },
-    {
-      initialIndex: 2,
-      name: 'Step 2',
-      nextSteps: [3],
-      x: 1600,
-      y: 200,
-      color: 'red',
-      height: randomSize(50, 100),
-      width: randomSize(100, 200),
-    },
-    {
-      initialIndex: 3,
-      name: 'Step 12',
-      nextSteps: [4],
-      x: 300,
-      y: 400,
-      color: 'red',
-      height: randomSize(50, 100),
-      width: randomSize(100, 200),
-    },
-    {
-      initialIndex: 4,
-      name: 'Step 1',
-      nextSteps: [5, 6],
-      x: 110,
-      y: 400,
-      color: 'red',
-      height: randomSize(50, 100),
-      width: randomSize(100, 200),
-    },
-    {
-      initialIndex: 5,
-      name: 'Step 1',
-      nextSteps: [],
-      x: 110,
-      y: 600,
-      color: 'red',
-      height: randomSize(50, 100),
-      width: randomSize(100, 200),
-    },
-    {
-      initialIndex: 6,
-      name: 'Step 1',
-      nextSteps: [],
-      x: 110,
-      y: 200,
-      color: 'red',
-      height: randomSize(50, 100),
-      width: randomSize(100, 200),
-    },
+  // Превратим шаги, в шаги для диаграммы. Рассичтаем ширину по длинне текста и установим высоту
+  const diagramSteps = useMemo<DiagramWorflowStep[]>(() => {
+    const averageCharWidth = fontSize * 0.5;
+    const padding = fontSize * 1.5;
+    const minWidth = averageCharWidth * 6; // Минимальная длинна в 6 символов, чтобы не было сильно узких блоков
 
-  ];
-  const name = useSelector(selectName);
-  const selectedStep = useSelector(selectSelectedStep);
-  const dispatch = useDispatch();
-
-  const handleStepClick = (step: WorkflowStep) => {
-    dispatch(setSelectedStep(step.initialIndex));
-  };
-
-  const connections = steps.flatMap(step => {
+    return steps.map(step => ({
+      ...step,
+      width: Math.max(minWidth, step.name.length * averageCharWidth + padding * 2),
+      height: 55
+    }));
+  }, [steps]);
+  /** @todo Вынести рассчёты в отдельную функцию */
+  const connections = useMemo(() => diagramSteps.flatMap(step => {
     return step.nextSteps.map(nextStepIndex => {
-      const nextStep = steps.find(s => s.initialIndex === nextStepIndex);
+      const nextStep = diagramSteps.find(existingStep => existingStep.initialIndex === nextStepIndex);
       if (!nextStep) {
         return null;
       }
@@ -109,7 +42,7 @@ export function WorkflowDiagram() {
 
       const dx = x2 - x1; // Направление по x, оно же первый катет
       const dy = y2 - y1; // Направление по y, оно же второй катет
-      const len = Math.sqrt(dx * dx + dy * dy); // Длина отрезка, (гипотенуза по теореме Пифагора)
+      const len = Math.sqrt(dx * dx + dy * dy); // Длина отрезка (гипотенуза по теореме Пифагора)
 
       if (len === 0) {
         return null;
@@ -118,7 +51,7 @@ export function WorkflowDiagram() {
       const halfWidth = nextStep.width / 2;
       const halfHeight = nextStep.height / 2;
 
-      // Определяем идёт ли линия чисто (с небольшой погрещностью) по вертикали или горизонтали
+      // Определяем идёт ли линия строго (с небольшой погрешностью) по вертикали или горизонтали
       const threshold = 0.1;
       const isHorizontal = Math.abs(dy) < threshold * len;
       const isVertical = Math.abs(dx) < threshold * len;
@@ -159,29 +92,50 @@ export function WorkflowDiagram() {
       };
     })
       .filter(Boolean);
+  }), [diagramSteps]);
+
+
+
+  // Добавим отступы, чтобы не перекрывать рамку выделения, когда блок у края. Используем viewbox для этого
+  const viewBox = useMemo(() => {
+    const diagramPadding = 20;
+    const minX = Math.min(...diagramSteps.map(step => step.x));
+    const minY = Math.min(...diagramSteps.map(step => step.y));
+    const maxX = Math.max(...diagramSteps.map(step => step.x + step.width));
+    const maxY = Math.max(...diagramSteps.map(step => step.y + step.height));
+
+    return `${(minX - diagramPadding).toString()} ${(minY - diagramPadding).toString()} ${(maxX - minX + diagramPadding * 2).toString()} ${(maxY - minY + diagramPadding * 2).toString()}`;
+  }, [diagramSteps]);
+
+
+  if (steps.length === 0) {
+    return <div>Загрузка...</div>;
+    // или <div>Нет шагов для отображения</div>;
+  }
+
+  /** Обработчик клика по блоку шага (делаем выбор шага) */
+  const handleStepClick = (step: WorkflowStep) => {
+    selectStep(step.initialIndex);
+  };
+
+  /** 
+   * Вспомогательная функция, чтобы не дублировать логику center - halfSize 
+   * @param centerX - X-координата центра маркера
+   * @param centerY - Y-координата центра маркера
+   */
+  const getMarkerRectCoords = (centerX: number, centerY: number) => ({
+    x: centerX - resizeMarkerSize / 2,
+    y: centerY - resizeMarkerSize / 2,
   });
+
 
   return (
     <div>
-      <h1>Workflow Diagram: {name}</h1>
-      <ul>
-        {steps.map(step => (
-          <li
-            key={step.initialIndex}
-            onClick={() => { handleStepClick(step); }}
-            style={{
-              backgroundColor: selectedStep === step.initialIndex ? 'lightblue' : 'transparent',
-              cursor: 'pointer',
-            }}
-          >
-            {step.name}
-          </li>
-        ))}
-      </ul>
       {/* SVG-контейнер под диаграмму */}
       <svg
         width="100%"
-        height={Math.max(...steps.map(step => step.y + step.width), 300)}
+        height={Math.max(...diagramSteps.map(step => step.y + step.width), 300)}
+        viewBox={viewBox}
         style={{ display: 'block' }}
       >
         <defs>
@@ -219,17 +173,9 @@ export function WorkflowDiagram() {
         })}
 
         {/* Рисуем шаги */}
-        {steps.map(step => {
-          // const isSelected = selectedStep === step.initialIndex;
-          const isSelected = true;
-          const markerSize = 8;
-          const selectedBorderGap = 6; // Отступ рамки выделения от самого блока
-
-          // Вспомогательная функция, чтобы не дублировать логику center - halfSize
-          const getMarkerRectCoords = (centerX: number, centerY: number) => ({
-            x: centerX - markerSize / 2,
-            y: centerY - markerSize / 2,
-          });
+        {diagramSteps.map(step => {
+          /** @todo Вынести шаг в отдельный компонент */
+          const isSelected = selectedStep === step.initialIndex;
 
           const resizeMarkers = [
             // Углы (по углам рамки выделения)
@@ -256,18 +202,21 @@ export function WorkflowDiagram() {
               <rect
                 width={step.width}
                 height={step.height}
-                fill={step.color}
+                fill={isSelected ? '#a02c2c' : step.color === 'white' ? '#f5f5f5' : 'white'} // Для белого цвета сделаем фон чуть темнее, тчобы читался
+                stroke={isSelected ? '#a02c2c' : step.color}
+                strokeWidth={2}
                 rx="var(--radius)" // скругление углов
               />
 
               {/* Текст названия */}
               <text
                 x={step.width / 2}
-                y={step.height / 2 + 4}
+                y={step.height / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize="var(--font-size-primary)"
-                fill="var(--text-primary)"
+                fontSize={fontSize}
+                fontWeight="500"
+                fill={isSelected ? 'white' : step.color}
                 pointerEvents="none" // чтобы клики проходили сквозь текст к прямоугольнику
               >
                 {step.name}

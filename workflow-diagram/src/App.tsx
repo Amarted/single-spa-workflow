@@ -1,11 +1,13 @@
-import './App.scss';
+
+import { Provider } from 'react-redux';
+import { store } from './store/store';
+import { WorkflowDiagram } from './components/WorkflowDiagram';
 
 function App() {
-
   return (
-    <>
-      Workflow diagram
-    </>
+    <Provider store={store}>
+      <WorkflowDiagram />
+    </Provider>
   );
 }
 
