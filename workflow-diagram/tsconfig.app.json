@@ -31,5 +31,9 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/**/*.cy.ts",
+    "src/**/*.cy.tsx"
   ]
 }
