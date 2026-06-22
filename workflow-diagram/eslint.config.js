@@ -25,6 +25,8 @@ export default defineConfig([
     },
     rules: {
       'semi': ['error', 'always'],
+      '@typescript-eslint/return-await': 'off',
+      '@typescript-eslint/prefer-promise-reject-errors': 'off'
     }
   },
 ]);
