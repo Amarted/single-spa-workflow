@@ -1,0 +1,103 @@
+/**
+ * Локально подключённые шрифты Open Sans.
+ *
+ * Скачаны с Google Fonts и подключены локально, чтобы:
+ * - Исключить зависимость от внешнего CDN при загрузке страницы
+ * - Устранить FOUT (Flash of Unstyled Text) — шрифт доступен сразу
+ * - Не отправлять запросы к Google при каждом обновлении страницы
+ */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Italic-300.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Italic-400.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Italic-500.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Italic-600.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Italic-700.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Italic-800.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Normal-300.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Normal-400.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Normal-500.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Normal-600.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Normal-700.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../assets/fonts/OpenSans-Normal-800.ttf') format('truetype');
+}
