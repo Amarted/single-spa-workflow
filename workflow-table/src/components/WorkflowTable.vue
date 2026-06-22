@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faFile, faTrashCan, faEdit, } from '@fortawesome/free-regular-svg-icons';
-import type { WorkflowStep } from '../../../root-config/src/shared/workflow/interfaces/WorkflowStep';
+import type { WorkflowStep } from '@shared/workflow/interfaces/WorkflowStep';
 import { useWorkflowStore } from '../store/useWorkflowStore';
 import { messageService } from '@shared/MessageService';
 import { storeToRefs } from 'pinia';
@@ -31,11 +31,11 @@ const { name, steps, selectedStep } = storeToRefs(store);
 const { createStep, removeStep, selectStep } = store;
 
 onMounted(() => {
-  document.addEventListener('keydown', handleDelteKeyOnSelectedStep);
+  document.addEventListener('keydown', handleDeleteKeyOnSelectedStep);
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleDelteKeyOnSelectedStep);
+  document.removeEventListener('keydown', handleDeleteKeyOnSelectedStep);
 });
 
 
@@ -43,7 +43,7 @@ onBeforeUnmount(() => {
  * Удаление шага при нажатии Del на выделенном шаге
  * @param event Событие нажатия 
  */
-function handleDelteKeyOnSelectedStep(event: KeyboardEvent): void {
+function handleDeleteKeyOnSelectedStep(event: KeyboardEvent): void {
   if (event.key === 'Delete' && selectedStep.value !== null) {
     const stepToRemove = steps.value.find(s => s.initialIndex === selectedStep.value);
     if (stepToRemove) {
@@ -167,7 +167,7 @@ async function onChangeNameClick(step: WorkflowStep): Promise<void> {
 
 /** Обработчик завершения редактирования имени  */
 function onNameChangeComplete(): void {
-  // Сркыть форму
+  // Скрыть форму
   editNameForm.stepIndex = null;
   editNameForm.show = false;
   editNameForm.isNew = false;
@@ -175,7 +175,7 @@ function onNameChangeComplete(): void {
 
 
 let highlightTableTimeout: number | undefined;
-/** Подсветка таблицы, для акцента на изменения в ней (напримре добавление нового состояния) */
+/** Подсветка таблицы, для акцента на изменения в ней (например добавление нового состояния) */
 function highlightTable(): void {
   clearTimeout(highlightTableTimeout);
   // Включаем подсветку и отключаем через некоторое время
@@ -233,9 +233,9 @@ function getStepByIndex(index: number): WorkflowStep {
 <template>
   <div id="workflowTableComponentRoot">
     <!-- @todo Заменить на лоадер, с проверкой загрузки workflow -->
-    <template v-if="store.name">
+    <template v-if="name">
       <div class="header">
-        <h3>Структура рабочего процесса "{{ store.name }}"</h3>
+        <h3>Структура рабочего процесса "{{ name }}"</h3>
         <button @click="onCreateStepClick()">
           <svg class="icon-plus">
             <use xlink:href="#icon-plus"></use>

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 // root-config/src/shared/workflow/store/WorkflowStore.spec.ts
 import { vi, expect, it, describe, beforeEach } from 'vitest';
-import { WorkflowStore } from './WorkflowStore';
+import { WorkflowStore, type WorkflowStepCreationData } from './WorkflowStore';
 import { workflowApiService } from '../api/WorkflowApiService';
 import type { WorkflowStep } from '../interfaces/WorkflowStep';
 import { ValidationError } from '../../errors/ValidationError';
@@ -34,7 +34,7 @@ describe('WorkflowStore', () => {
   // Тестируем создание/добавление шага
   describe('createStep', () => {
     it('не должен создавать шаг при дубликате имени (клиентская валидация)', async () => {
-      const duplicateStep: WorkflowStep = { ...initialSteps[0], initialIndex: 99 };
+      const duplicateStep: WorkflowStepCreationData = { ...initialSteps[0] };
 
       const result = await store.createStep('wf-name', duplicateStep);
 
@@ -49,8 +49,8 @@ describe('WorkflowStore', () => {
     });
 
     it('откатывает изменения при ошибке сервера (ValidationError)', async () => {
-      const newStep: WorkflowStep = {
-        initialIndex: 2, name: 'New Step', x: 10, y: 20, color: '#000', nextSteps: []
+      const newStep: WorkflowStepCreationData = {
+        name: 'New Step', x: 10, y: 20, color: '#000', nextSteps: []
       };
 
       vi.spyOn(workflowApiService, 'createStep').mockResolvedValue({
@@ -70,13 +70,13 @@ describe('WorkflowStore', () => {
     });
 
     it('успешно создает шаг при отсутствии ошибок, и получает значение с сервера', async () => {
-      const newStep: WorkflowStep = {
-        initialIndex: 2, name: 'New Step', x: 10, y: 20, color: 'black', nextSteps: []
+      const newStep: WorkflowStepCreationData = {
+        name: 'New Step', x: 10, y: 20, color: 'black', nextSteps: []
       };
 
       vi.spyOn(workflowApiService, 'createStep').mockResolvedValue({
         ok: true,
-        value: { ...newStep, color: 'red' } // Допустим сервер изменил цвет
+        value: { ...newStep, initialIndex: 2, color: 'red' } // Допустим сервер изменил цвет
       });
 
       const result = await store.createStep('wf-name', newStep);
@@ -85,6 +85,8 @@ describe('WorkflowStore', () => {
       if (result.ok) {
         // Ответ должен быть такой, как вернул сервер (x: 100)
         expect(result.value.color).toBe('red');
+        // Так же проверим новый индекс
+        expect(result.value.initialIndex).toBe(2);
       }
 
       const steps = store.stepsStream.getValue();

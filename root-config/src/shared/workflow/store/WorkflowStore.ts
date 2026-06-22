@@ -6,7 +6,7 @@ import type { Workflow } from '../interfaces/Workflow';
 import type { Result } from '../../Result';
 
 /** Данные для создания без index. Он генерируется автоматически */
-type WorkflowStepCreationData = Omit<WorkflowStep, 'initialIndex'>;
+export type WorkflowStepCreationData = Omit<WorkflowStep, 'initialIndex'>;
 
 /**
  * Сервис для управления состоянием рабочего процесса

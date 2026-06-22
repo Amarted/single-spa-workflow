@@ -22,7 +22,7 @@ const formRef = ref<HTMLFormElement | null>(null);
 const { changeStepName } = useWorkflowStore();
 
 onMounted(() => {
-  // Фокус на поле для удобвства
+  // Фокус на поле для удобства
   inputRef.value?.focus();
   // Выделяем имя полностью если новый шаг
   if (props.isNew) {
