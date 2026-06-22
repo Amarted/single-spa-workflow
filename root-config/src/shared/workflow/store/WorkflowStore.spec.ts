@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 // root-config/src/shared/workflow/store/WorkflowStore.spec.ts
 import { vi, expect, it, describe, beforeEach } from 'vitest';
 import { WorkflowStore } from './WorkflowStore';
@@ -119,7 +120,7 @@ describe('WorkflowStore', () => {
       }
 
       expect(workflowApiService.changeStepName).not.toHaveBeenCalled();
-    })
+    });
 
     it('не меняет имя, если оно дублируется у другого шага', async () => {
       // Сначала добавим второй шаг

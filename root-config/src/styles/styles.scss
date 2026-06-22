@@ -32,11 +32,20 @@ body {
 }
 
 #app-sidebar {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
   width: 40px;
   border-left: 1px solid var(--brand-primary-light);
   background: var(--brand-primary);
   color: white;
   grid-row: span 2;
+
+  .user-icon {
+    width: 14px;
+    height: 14px;
+    fill: white;
+  }
 }
 
 @media (max-width: 1200px) {
