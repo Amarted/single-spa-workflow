@@ -11,7 +11,7 @@
 
 ### Порядок действий
 
-1. Установите зависимости в корне:
+1. Установите зависимости в каждом микро-фронтенде:
    ```bash
    cd root-config && yarn install &&
    cd ../workflow-table && yarn install &&
@@ -115,4 +115,78 @@ yarn dev
 
 - Для операций (переименование, создание) применяется паттерн Result/Either. Ошибки валидации рассматриваются как часть бизнес-процесса (предусмотренные ошибки). Поэтому их не бросаем, а возвращаем как результат. Т.е. описываем не только возможный успешный результат, но и неуспешный. Например: createStep(data: StepCreationData) => Step | ValidationError означает, что при создании шага вернётся либо успешно созданный шаг, либо объяснение неудачного результата (ValidationError). Бросание исключений (throw) оставляем только для непредусмотренных (исключительных) ситуаций, для чего они, по сути, и нужны.
 
-- Ошибки сервера с кодом 400 - такие же ошибки валидации, как и при валидации на клиенте (не важен источник валидации, важен сам её факт). Соответственно и используем для них один и тот же тип ValidationError, и возвращаем как результат (неуспешный flow). Остальные ошибки считаем непредусмотренными, и бросаем как ApiError. Это позволит обрабатывать ошибки валидации единообразно (просто проверяем является ли результат ValidationError). После чего, например, помечать поле красным, добавлять к нему сообщение, независимо от того на какой стороне происходила валидация. 
+- Ошибки сервера с кодом 400 - такие же ошибки валидации, как и при валидации на клиенте (не важен источник валидации, важен сам её факт). Соответственно и используем для них один и тот же тип ValidationError, и возвращаем как результат (неуспешный flow). Остальные ошибки считаем непредусмотренными, и бросаем как ApiError. Это позволит обрабатывать ошибки валидации единообразно (просто проверяем является ли результат ValidationError). После чего, например, помечать поле красным, добавлять к нему сообщение, независимо от того на какой стороне происходила валидация.
+
+## Тестирование
+
+### Unit-тесты (Vitest)
+
+**WorkflowStore** — `root-config/src/shared/workflow/store/WorkflowStore.spec.ts`
+
+Тестирует бизнес-логику: создание, переименование, удаление шагов, оптимистичные обновления, откаты при ошибках.
+
+```bash
+cd root-config
+yarn test
+```
+
+### Интеграционные тесты (Cypress Component Testing)
+
+Каждый микро-фронтенд имеет собственный Cypress с Component Testing, тестирующий компоненты в изоляции с Vite dev-server.
+
+#### workflow-table (Vue + Pinia)
+
+**Конфигурация:** [`workflow-table/cypress.config.ts`](workflow-table/cypress.config.ts)
+**Тест:** [`workflow-table/src/components/WorkflowTable.cy.ts`](workflow-table/src/components/WorkflowTable.cy.ts)
+
+Проверяет:
+- Рендеринг таблицы с шагами
+- Выделение шага при клике
+- Создание нового шага
+- Удаление шага с подтверждением
+- Пустое состояние
+
+API мокается через `cy.stub()` на `WorkflowApiService`.
+
+```bash
+cd workflow-table
+yarn test          # headless
+yarn test:open     # cypress open
+```
+
+#### workflow-diagram (React + Redux)
+
+**Конфигурация:** [`workflow-diagram/cypress.config.ts`](workflow-diagram/cypress.config.ts)
+**Тест:** [`workflow-diagram/src/components/WorkflowDiagram.cy.tsx`](workflow-diagram/src/components/WorkflowDiagram.cy.tsx)
+
+Проверяет:
+- Рендеринг SVG-блоков
+- Отрисовка стрелок-соединений
+- Пустое состояние
+- Расчёт размеров блоков
+
+Данные подаются через тестовый Redux store.
+
+```bash
+cd workflow-diagram
+yarn test          # headless
+yarn test:open     # cypress open
+```
+
+### E2E-тесты (Cypress, опционально)
+
+Для сквозного тестирования всей системы (все 3 dev-сервера запущены) можно использовать E2E-тест в `root-config`:
+
+**Конфигурация:** [`root-config/cypress.config.ts`](root-config/cypress.config.ts)
+**Тест:** [`root-config/cypress/e2e/workflow.cy.ts`](root-config/cypress/e2e/workflow.cy.ts)
+
+Проверяет сквозные сценарии: загрузка страницы → таблица + диаграмма → создание/удаление/редактирование шагов.
+
+**API мокается** через `cy.intercept()` на уровне HTTP с помощью кастомной команды `interceptWorkflowApi` — запуск тестового бекенда не требуется.
+
+```bash
+# Терминал 1: cd workflow-table && yarn dev
+# Терминал 2: cd workflow-diagram && yarn dev
+# Терминал 3: cd root-config && yarn dev
+# Терминал 4: cd root-config && yarn test:e2e
+```
