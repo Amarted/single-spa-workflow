@@ -14,8 +14,8 @@ body {
   margin: 0;
   padding: 0;
   background-color: var(--bg-primary);
-  font: 15px/145% var(--font);
-  line-height: 145%;
+  font: var(--font-size-primary)/var(--line-height-primary) var(--font);
+  line-height: var(--line-height-primary);
   letter-spacing: 0.02em;
   color: var(--text-primary);
 }
