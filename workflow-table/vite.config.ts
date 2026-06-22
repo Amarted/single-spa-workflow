@@ -56,7 +56,7 @@ export default defineConfig(({ command }) => {
 
   return {
     server: {
-      port: 4101,
+      port: 5001,
     },
     plugins: [
       vue(),
