@@ -34,6 +34,7 @@ const vueLifecycles = singleSpaVue({
 
 const unmountStore = () => {
   const { destroy } = useWorkflowStore();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   destroy();
 };
 
