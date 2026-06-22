@@ -55,13 +55,13 @@ async function onSubmit(): Promise<void> {
     // Валидация происходит в сторе, просто проверяем на наличие ошибок валидации
     const result = await changeStepName(props.step.initialIndex, newName);
     if (result.ok) {
-      messageService.showToast('Имя шага изменено', 'success');
+      messageService.showToast('Состояние переименовано', 'success');
       emit('submit');
     } else {
       errorMessage.value = result.error.message;
     }
   } catch (error) {
-    messageService.showToast('Что-то пошло не так. Изменение имени шага отменено', 'error');
+    messageService.showToast('Что-то пошло не так. Изменение имени отменено', 'error');
     emit('cancel');
   }
 
