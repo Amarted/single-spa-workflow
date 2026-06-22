@@ -17,11 +17,6 @@
     href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
     rel="stylesheet"
   >
-
-  <link
-    rel="stylesheet"
-    href="/src/styles/root-style.scss"
-  >
   <link
     rel="icon"
     type="image/svg+xml"
@@ -31,6 +26,41 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   />
+  <style>
+    /* Критические стили для первого рендеринга — без них макет "прыгает" */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+    }
+
+    #root-layout {
+      display: grid;
+      grid-template-columns: min-content 1fr 1fr;
+      height: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #app-sidebar {
+      width: 40px;
+      background: #1a237e;
+    }
+
+    @media (max-width: 1200px) {
+      #root-layout {
+        grid-template-columns: min-content 1fr;
+      }
+    }
+
+    svg.hidden {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+  </style>
   <script
     type="module"
     src="/src/main.ts"
@@ -38,10 +68,14 @@
 </head>
 
 <body>
+
   <div id="root-layout">
     <div id="app-sidebar">
       <div class="user-avatar">
-        <svg class="icon user-icon">
+        <svg
+          class="icon user-icon"
+          aria-hidden="true"
+        >
           <use href="#user-avatar-icon" />
         </svg>
       </div>
@@ -50,7 +84,7 @@
     <div id="workflow-diagram-root"></div>
   </div>
 
-  <svg display="none">
+  <svg class="hidden">
     <defs>
       <symbol
         id="user-avatar-icon"
@@ -62,9 +96,9 @@
         <path
           d="M224 248a120 120 0 1 0 0-240 120 120 0 1 0 0 240zm-29.7 56C95.8 304 16 383.8 16 482.3 16 498.7 29.3 512 45.7 512l356.6 0c16.4 0 29.7-13.3 29.7-29.7 0-98.5-79.8-178.3-178.3-178.3l-59.4 0z"
         />
+      </symbol>
+    </defs>
   </svg>
-  </symbol>
-  </defs>
 </body>
 
 </html>
