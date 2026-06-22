@@ -1,6 +1,6 @@
 
 import { ref, type Ref } from 'vue';
-import { workflowStore, type WorkflowStore } from '@shared/workflow/store/WorkflowStore';
+import { workflowStore } from '@shared/workflow/store/WorkflowStore';
 import type { WorkflowStep } from '../../../root-config/src/shared/workflow/interfaces/WorkflowStep';
 import { defineStore } from 'pinia';
 import type { Subscription } from 'rxjs';
@@ -9,10 +9,10 @@ interface AppWorkflowStore {
   steps: Ref<WorkflowStep[]>;
   name: Ref<string>;
   selectedStep: Ref<number | null>;
-  createStep: WorkflowStore['createStep'];
-  changeStepName: WorkflowStore['changeStepName'];
-  removeStep: WorkflowStore['removeStep'];
-  selectStep: WorkflowStore['selectStep'];
+  createStep: typeof workflowStore.createStep;
+  changeStepName: typeof workflowStore.changeStepName;
+  removeStep: typeof workflowStore.removeStep;
+  selectStep: typeof workflowStore.selectStep;
   destroy: () => void;
 }
 
