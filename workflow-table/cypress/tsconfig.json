@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2023",
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": [
+      "cypress",
+      "@cypress/vue"
+    ],
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": false,
+    "paths": {
+      "@shared/*": [
+        "../../root-config/src/shared/*"
+      ]
+    }
+  },
+  "include": [
+    "../cypress.config.ts",
+    "./**/*.ts",
+    "../src/**/*.cy.ts",
+    "../src/**/*.ts",
+    "../src/**/*.vue",
+    "../../root-config/src/**/*.ts"
+  ]
+}

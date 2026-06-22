@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "cypress run --component",
+    "test:open": "cypress open --component"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -16,10 +18,13 @@
     "vue": "^3.5.34"
   },
   "devDependencies": {
+    "@cypress/vite-dev-server": "^7.3.3",
+    "@cypress/vue": "^6.0.3",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.12.3",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/tsconfig": "^0.9.1",
+    "cypress": "^15.17.0",
     "eslint": "^10.5.0",
     "globals": "^17.6.0",
     "rxjs": "^7.8.2",

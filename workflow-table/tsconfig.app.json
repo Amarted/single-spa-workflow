@@ -20,5 +20,9 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue"
+  ],
+  "exclude": [
+    "src/**/*.cy.ts",
+    "src/**/*.cy.tsx"
   ]
 }
