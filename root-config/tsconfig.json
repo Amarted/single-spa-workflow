@@ -29,5 +29,13 @@
   "include": [
     "src",
     "vite.config.ts"
+  ],
+  "exclude": [
+    "cypress"
+  ],
+  "references": [
+    {
+      "path": "./cypress/tsconfig.json"
+    }
   ]
 }
