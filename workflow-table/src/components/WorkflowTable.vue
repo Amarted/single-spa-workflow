@@ -36,6 +36,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleDeleteKeyOnSelectedStep);
+  clearTimeout(highlightTableTimeout);
 });
 
 
@@ -181,8 +182,7 @@ function highlightTable(): void {
   // Включаем подсветку и отключаем через некоторое время
   isTableHighlighted.value = true;
   highlightTableTimeout = setTimeout(() => isTableHighlighted.value = false, 1200);
-  ;
-};
+}
 
 async function scrollToTableLastRow(): Promise<void> {
   await nextTick();
@@ -472,7 +472,9 @@ function getStepByIndex(index: number): WorkflowStep {
     }
   }
 }
+</style>
 
+<style>
 :root {
   --highlight-color: var(--color-success);
   --highlight-duration: 3s;
@@ -485,7 +487,7 @@ function getStepByIndex(index: number): WorkflowStep {
   }
 
   20% {
-    box-shadow: 0 0 0 8px var(--highlight-color);
+    box-shadow: 0 0 0 1px var(--highlight-color);
   }
 
   100% {
