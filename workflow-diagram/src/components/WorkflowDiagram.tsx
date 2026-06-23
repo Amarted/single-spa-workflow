@@ -15,6 +15,18 @@ export function WorkflowDiagram() {
     return steps.map(step => createStepForDiagram(step, 20));
   }, [steps]);
 
+  // Выбранный шаг рендерим последним, чтобы он был поверх остальных
+  // (в SVG нет z-index — порядок отрисовки определяется порядком элементов в DOM)
+  const sortedSteps = useMemo<DiagramWorflowStep[]>(() => {
+    if (selectedStep === null) {
+      return diagramSteps;
+    }
+    return [
+      ...diagramSteps.filter(step => step.initialIndex !== selectedStep),
+      ...diagramSteps.filter(step => step.initialIndex === selectedStep),
+    ];
+  }, [diagramSteps, selectedStep]);
+
   /** Линии (стрелки) соединяющие шаги*/
   const connections = useMemo(() => createStepConnections(diagramSteps), [diagramSteps]);
 
@@ -77,8 +89,8 @@ export function WorkflowDiagram() {
           );
         })}
 
-        {/* Рисуем шаги */}
-        {diagramSteps.map(step => {
+        {/* Рисуем шаги. Выбранный шаг — последним, чтобы быть поверх остальных (в SVG нет z-index) */}
+        {sortedSteps.map(step => {
           const isSelected = selectedStep === step.initialIndex;
 
           return (
