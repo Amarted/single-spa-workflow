@@ -106,7 +106,8 @@ export class WorkflowStore {
       };
     }
     // Имя шага должно быть уникальным
-    const nameIsNotUnique = steps.some(step => step.name === newName && step.initialIndex !== existingStep.initialIndex);
+    const lowerNewName = newName.toLowerCase();
+    const nameIsNotUnique = steps.some(step => step.name.toLowerCase() === lowerNewName && step.initialIndex !== existingStep.initialIndex);
     if (nameIsNotUnique) {
       return {
         ok: false,
@@ -114,7 +115,7 @@ export class WorkflowStore {
       };
     }
     // Имя не изменилось, вернём текущие данные без обновлениея, и не дёргая сервер лишний раз
-    if (existingStep.name === newName) {
+    if (existingStep.name.toLowerCase() === lowerNewName) {
       return {
         ok: true,
         value: {
