@@ -173,7 +173,7 @@ yarn test          # headless
 yarn test:open     # cypress open
 ```
 
-### E2E-тесты (Cypress, опционально)
+### E2E-тесты
 
 Для сквозного тестирования всей системы (все 3 dev-сервера запущены) можно использовать E2E-тест в `root-config`:
 
