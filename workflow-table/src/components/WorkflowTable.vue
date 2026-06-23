@@ -477,7 +477,7 @@ function getStepByIndex(index: number): WorkflowStep {
 <style>
 :root {
   --highlight-color: var(--color-success);
-  --highlight-duration: 3s;
+  --highlight-duration: 2s;
 }
 
 @keyframes highlight-table {
@@ -487,7 +487,7 @@ function getStepByIndex(index: number): WorkflowStep {
   }
 
   20% {
-    box-shadow: 0 0 0 1px var(--highlight-color);
+    box-shadow: 0 0 3px 0px var(--highlight-color);
   }
 
   100% {
