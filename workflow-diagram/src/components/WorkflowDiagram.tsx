@@ -6,6 +6,7 @@ import type { DiagramWorflowStep } from '../interfaces/DiagramWorflowStep';
 import { createStepForDiagram } from '../services/createStepForDiagram';
 import { WorkflowDiagramStep } from './WorkflowDiagramStep';
 import { createStepConnections } from '../services/createStepConnections';
+import classes from './WorkflowDiagram.module.scss';
 
 export function WorkflowDiagram() {
   const { steps, selectedStep, selectStep } = useWorkflowStore();
@@ -38,12 +39,12 @@ export function WorkflowDiagram() {
   };
 
   return (
-    <div>
+    <div className={classes.diagramRoot}>
       <svg
         width="100%"
-        height={Math.max(...diagramSteps.map(step => step.y + step.height), 300)}
+        height="auto"
         viewBox={viewBox}
-        style={{ display: 'block' }}
+        className={classes.diagramCanvas}
       >
         <defs>
           {/* Маркер для стрелки */}
