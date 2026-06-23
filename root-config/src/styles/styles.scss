@@ -42,11 +42,22 @@ body {
   color: white;
   grid-row: span 2;
 
-  .user-icon {
-    width: 14px;
-    height: 14px;
-    fill: white;
+  .user-avatar {
+    cursor: pointer;
+
+    .user-icon {
+      width: 14px;
+      height: 14px;
+      fill: white;
+    }
+
+    &:hover {
+      .user-icon {
+        fill: var(--gray-400);
+      }
+    }
   }
+
 }
 
 @media (max-width: 1200px) {
