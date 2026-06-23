@@ -44,7 +44,7 @@ export function WorkflowDiagramStep({ step, isSelected, onClick }: WorkflowDiagr
   };
 
   // Определяем цвета
-  const fillColor = isSelected ? '#a02c2c' : (step.color === 'white' ? '#f5f5f5' : 'white');
+  const fillColor = isSelected ? '#a02c2c' : 'white';
   const strokeColor = isSelected ? '#a02c2c' : step.color;
   const textColor = isSelected ? 'white' : strokeColor;
 
@@ -60,7 +60,7 @@ export function WorkflowDiagramStep({ step, isSelected, onClick }: WorkflowDiagr
         width={step.width}
         height={step.height}
         fill={fillColor}
-        stroke={strokeColor}
+        stroke={step.color === 'white' ? '#eee' : strokeColor}
         strokeWidth={2}
         rx="var(--radius)"
         style={{ transition: 'all 0.2s ease' }}
@@ -75,6 +75,8 @@ export function WorkflowDiagramStep({ step, isSelected, onClick }: WorkflowDiagr
         fontSize={fontSize}
         fontWeight="500"
         fill={textColor}
+        stroke={step.color === 'white' ? '#eee' : 'none'}
+        strokeWidth={.5}
         pointerEvents="none" // Пропускаем клики сквозь текст
         style={{ userSelect: 'none' }}
       >
